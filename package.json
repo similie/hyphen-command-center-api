@@ -1,0 +1,35 @@
+{
+  "name": "@similie/hyphen-commandcenter-api",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "adam.smith@similie.org",
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "dev": "nodemon --watch src --ext ts --exec \"tsx src/index.ts\"",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1692.0",
+    "bullmq": "^5.61.0",
+    "crypto-js": "^4.2.0",
+    "dotenv": "^17.2.3",
+    "fs-extra": "^11.3.2",
+    "mqtt": "^5.14.1",
+    "reflect-metadata": "^0.2.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/crypto-js": "^4.2.2",
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^24.7.0",
+    "class-validator": "^0.14.2",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.6"
+  }
+}
