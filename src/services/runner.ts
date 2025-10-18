@@ -1,17 +1,31 @@
 import { type MqttClient } from "mqtt";
-import { QueueManager, jQueue } from "./queue";
-import { generateUniqueUUID } from "src/utils/tools";
+import { JobValue, QueueManager, jQueue, jWorker } from "./queue";
+import { DeviceShadowManager } from "./device-shadow";
 export class ServiceRunner {
   private readonly QUEUE_CONNECTION_MESSAGE = "mqtt-message";
+  private readonly QUEUE_CONNECTION_MESSAGE_LOCAL = "mqtt-message-local";
   private _connected = false;
-  private _queue: jQueue;
-  private readonly subscriptions = [
+  private readonly _queue: jQueue;
+  private _queue_local: jQueue;
+  private static readonly subscriptions = [
     ...(process.env.MQTT_SUBSCRIPTIONS
       ? process.env.MQTT_SUBSCRIPTIONS.split(",")
       : ["Hy/#"]),
   ];
+
+  public static getSubscriptionsBase() {
+    return this.subscriptions.map((s) => s.replace(/\/[#\+]*$/, ""));
+  }
+
   public constructor(private readonly _client: MqttClient) {
+    this._queue_local = QueueManager.get.queue(
+      this.QUEUE_CONNECTION_MESSAGE_LOCAL,
+    );
     this._queue = QueueManager.get.queue(this.QUEUE_CONNECTION_MESSAGE);
+    QueueManager.get.worker(
+      this.QUEUE_CONNECTION_MESSAGE_LOCAL,
+      this.deviceProcessor.bind(this),
+    );
   }
 
   public get connected() {
@@ -27,8 +41,7 @@ export class ServiceRunner {
   }
 
   public setSubscriptions() {
-    for (const sub of this.subscriptions) {
-      console.log("I am setting these subscriptions", sub);
+    for (const sub of ServiceRunner.subscriptions) {
       this.client.subscribe(sub);
     }
   }
@@ -45,12 +58,26 @@ export class ServiceRunner {
     };
   }
 
-  public addToQueue(topic: string, message: string) {
-    // console.log("");
+  private async deviceProcessor(job: JobValue) {
+    const { topic, message } = job.data as {
+      topic: string;
+      message: Buffer<ArrayBufferLike>;
+    };
+    const broadcast = await DeviceShadowManager.get.processEvents(
+      topic,
+      message,
+    );
     this._queue.add(
       this.QUEUE_CONNECTION_MESSAGE,
-      { topic, message, _uid: generateUniqueUUID() },
+      broadcast,
       this.qOtions(topic),
     );
+  }
+
+  public async addToQueue(topic: string, message: Buffer<ArrayBufferLike>) {
+    this._queue_local.add(this.QUEUE_CONNECTION_MESSAGE_LOCAL, {
+      topic,
+      message: message.toString(),
+    });
   }
 }

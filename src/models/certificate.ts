@@ -1,5 +1,5 @@
-import * as Elipses from "@similie/ellipsies";
-const { Entity, Column, EllipsiesBaseModelUUID } = Elipses;
+import { Entity, Column, EllipsiesBaseModelUUID } from "@similie/ellipsies";
+
 @Entity("certificate", { schema: "public" })
 export default class IdentityCertificates extends EllipsiesBaseModelUUID {
   @Column("varchar", {
@@ -25,6 +25,20 @@ export default class IdentityCertificates extends EllipsiesBaseModelUUID {
     default: false,
   })
   public ca: string;
+
+  @Column("text", {
+    name: "cert_id",
+    unique: true,
+    // nullable: true,
+  })
+  public certId: string;
+
+  @Column("text", {
+    name: "cert_arn",
+    unique: true,
+    nullable: true,
+  })
+  public certArn: string;
 
   // ... Add more fields as needed
 }

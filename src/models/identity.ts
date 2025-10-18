@@ -1,6 +1,9 @@
-// import { Entity, Column, EllipsiesBaseModelUUID } from "@similie/ellipsies";
-import * as Ellipsies from "@similie/ellipsies";
-const { Entity, Column, EllipsiesBaseModelUUID, BeforeInsert } = Ellipsies;
+import {
+  Entity,
+  Column,
+  EllipsiesBaseModelUUID,
+  BeforeInsert,
+} from "@similie/ellipsies";
 
 import { generateUniqueId } from "src/utils/tools";
 

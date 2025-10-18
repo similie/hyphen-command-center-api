@@ -1,10 +1,7 @@
 import mqtt, { MqttClient, type IClientOptions } from "mqtt";
-import fs from "fs-extra";
 import IdentityCertificates from "../models/certificate";
 import SystemIdentity from "../models/identity";
-import path from "path";
 import { ServiceRunner } from "src/services";
-import { mqttMessageIdentity } from "src/utils/tools";
 
 export class MqttClientManager {
   private static client: MqttClient | null = null;
@@ -70,7 +67,7 @@ export class MqttClientManager {
     this.client.on("message", (topic, payload) => {
       console.log(`📩 [${topic}] ${payload.toString()}`);
 
-      this.serviceRunner.addToQueue(topic, payload.toString());
+      this.serviceRunner.addToQueue(topic, payload);
     });
 
     return this.client;

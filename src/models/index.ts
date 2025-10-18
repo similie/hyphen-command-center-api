@@ -1,4 +1,11 @@
 export { default as IdentityCertificates } from "./certificate";
 export { default as SystemIdentity } from "./identity";
-// export * from "./certificate";
-// export * from "./identity";
+export { default as Device } from "./device";
+export { default as DeviceStream } from "./devicestream";
+export { default as DeviceConfig } from "./deviceconfig";
+export { default as Heartbeat } from "./heartbeat";
+export { default as DeviceRegistration } from "./deviceregistration";
+export { ParameterValue, ForwardMap } from "./forwardmap";
+export { default as Decoder } from "./decoder";
+export { default as Forwarder } from "./forwarder";
+export { default as ForwarderTemplate } from "./fowardertemplates";

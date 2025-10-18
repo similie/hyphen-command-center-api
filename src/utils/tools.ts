@@ -1,6 +1,15 @@
 import CryptoJS from "crypto-js";
 import { v4 } from "uuid";
-import { type UUID } from "@similie/hyphen-command-types";
+import { type UUID as _UUID } from "@similie/hyphen-command-types";
+export type UUID = _UUID;
+
+export type MQTTFunctionalResponse = {
+  value: any;
+  key: string;
+  id: string;
+  request: string;
+};
+
 export const generateUniqueId = (numBytes: number = 16): string => {
   const wordArray = CryptoJS.lib.WordArray.random(numBytes);
   // Convert the WordArray to a hexadecimal string

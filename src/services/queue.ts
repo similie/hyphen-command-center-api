@@ -19,6 +19,7 @@ export type wOptions = WorkerOptions;
 export type qEOptions = QueueEventsOptions;
 export type JOpt = JobsOptions;
 export type jQueue = Queue;
+export type jWorker = Worker;
 export class QueueManager {
   private readonly _connection: ConnectionOptions;
   private static _instance: QueueManager | undefined;
@@ -36,6 +37,35 @@ export class QueueManager {
 
   public get queueOpt() {
     return { connection: this.connection };
+  }
+
+  public concurrentOpt(value: number = 5) {
+    return { connection: this.connection, concurrency: value };
+  }
+
+  public delayMsOpt(ttlMs: number) {
+    const opt: qOptions = {
+      connection: this.connection,
+      defaultJobOptions: {
+        delay: ttlMs, // e.g. 7 days = 7 * 24 * 60 * 60 * 1000
+        removeOnComplete: true,
+        removeOnFail: true,
+      },
+    };
+    return opt;
+  }
+
+  public delaySecondsOpt(seconds: number) {
+    const ttlMs = seconds * 1000;
+    const opt: qOptions = {
+      connection: this.connection,
+      defaultJobOptions: {
+        delay: ttlMs, // e.g. 7 days = 7 * 24 * 60 * 60 * 1000
+        removeOnComplete: true,
+        removeOnFail: true,
+      },
+    };
+    return opt;
   }
 
   public delayMinutesOpt(minutes: number) {

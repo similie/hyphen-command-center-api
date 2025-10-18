@@ -1,12 +1,13 @@
-import * as Similie from "@similie/ellipsies";
-
-const {
+import {
   Ellipsies,
   COMMON_API_SERVICE_ROUTES, // /api/v2/
   DEFAULT_SERVICE_PORT,
-} = Similie;
+  UnauthorizedError,
+} from "@similie/ellipsies";
+
 import * as models from "../models";
 import * as controllers from "../controllers";
+import { AuthMiddleware } from "../middleware";
 
 export const startServer = async () => {
   const ellipsies = new Ellipsies({
@@ -14,6 +15,8 @@ export const startServer = async () => {
     models,
     port: DEFAULT_SERVICE_PORT,
     prefix: COMMON_API_SERVICE_ROUTES,
+    middleware: [AuthMiddleware],
+    cors: true,
   });
 
   await ellipsies.setDataSource(

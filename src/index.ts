@@ -1,6 +1,6 @@
 // import "reflect-metadata";
 import { MqttClientManager } from "./mqtt";
-import { AwsCertificateManager, startServer } from "./services";
+import { AwsCertificateManager, startServer, RedisCache } from "./services";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -10,4 +10,5 @@ dotenv.config();
 
   const identity = await AwsCertificateManager.instance.ensureDefaultIdentity();
   await MqttClientManager.connect(identity);
+  await RedisCache.init();
 })();
