@@ -12,8 +12,9 @@ export class ParameterValue extends EllipsiesBaseModelUUID {
 
   @Column("text", {
     name: "description",
+    nullable: true,
   })
-  public description: string;
+  public description?: string;
 
   @Column("varchar", {
     name: "key",
@@ -80,7 +81,6 @@ export class ParameterValue extends EllipsiesBaseModelUUID {
         "Key, Name, and Value are required to create a Parameter Value",
       );
     }
-    // values.identifier = values.identifier || generateUniqueUUID();
 
     if (!values.secret) {
       values.secret = false;

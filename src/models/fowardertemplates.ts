@@ -19,6 +19,9 @@ export default class ForwarderTemplate extends EllipsiesBaseModelUUID {
   @Column("simple-array", { name: "map_ids", nullable: true })
   mapIds?: string[]; // list of ForwardMap ids
 
+  @Column("simple-array", { name: "transformer_ids", nullable: true })
+  transformerIds?: string[]; // list of Transformer ids
+
   @Column("jsonb", { name: "targets" })
   targets!: ForwarderTargetTemplates[]; // one or more outputs
 

@@ -497,8 +497,12 @@ export class DeviceShadowManager {
       }
     } catch (e) {
       console.error("Error processing forwarder targets:", e);
-      const maxAttempts = data.fwd.retryPolicy?.maxAttempts || 0;
-      const delayMs = data.fwd.retryPolicy?.backoffMs || 5 * 60 * 1000; // default to 5 minutes
+      const { template } = data.ctx;
+      if (!template) {
+        return;
+      }
+      const maxAttempts = template.retryPolicy?.maxAttempts || 0;
+      const delayMs = template.retryPolicy?.backoffMs || 5 * 60 * 1000; // default to 5 minutes
 
       if (data.attempts > maxAttempts && maxAttempts !== -1) {
         return console.log("Max attempts reached");

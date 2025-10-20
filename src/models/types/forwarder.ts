@@ -1,4 +1,5 @@
 import { UUID } from "src/utils/tools";
+import ForwarderTemplate from "../fowardertemplates";
 
 export enum ForwarderTargetKind {
   MQTT = "mqtt",
@@ -13,6 +14,7 @@ export type MsgCtx = {
   device: any; // your Device type
   ts?: Date;
   keys?: Record<string, Record<string, string>>;
+  template?: ForwarderTemplate;
   artifacts?: Record<string, any>; // e.g. decoded data, maps, etc.
 };
 

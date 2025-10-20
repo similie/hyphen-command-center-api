@@ -18,7 +18,8 @@ export default class ParameterValueController extends EllipsiesController<Parame
       ControllerFunctionNames.SCHEMA,
       ControllerFunctionNames.FIND,
       ControllerFunctionNames.CREATE,
-      ControllerFunctionNames.DELETE,
+      ControllerFunctionNames.DESTROY,
+      ControllerFunctionNames.DESTROY_ONE,
       ControllerFunctionNames.UPDATE,
     ]);
   }
@@ -40,6 +41,7 @@ export default class ParameterValueController extends EllipsiesController<Parame
       const record = await ParameterValue.createValue(value);
       return record.toJSON();
     } catch (error) {
+      console.error("Error creating Parameter Value:", error);
       throw new BadRequestError("Message and topic are required");
     }
   }

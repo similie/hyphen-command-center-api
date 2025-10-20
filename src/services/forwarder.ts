@@ -1,4 +1,10 @@
-import { Decoder, Forwarder, ForwardMap, ParameterValue } from "src/models";
+import {
+  Decoder,
+  Forwarder,
+  ForwarderTemplate,
+  ForwardMap,
+  ParameterValue,
+} from "src/models";
 import {
   ForwarderTarget,
   ForwarderTargetKind,
@@ -235,9 +241,16 @@ export class ForwarderService {
 
     await this.pullKeys(fwd, ctx);
 
-    if (fwd.decoderIds?.length) {
+    const template = await ForwarderTemplate.findOne({
+      where: { id: fwd.template },
+    });
+    if (!template) {
+      return;
+    }
+    ctx.template = template;
+    if (template.decoderIds?.length) {
       const decoders = await Decoder.find({
-        where: { id: In(fwd.decoderIds) },
+        where: { id: In(template.decoderIds) },
       });
       for (const dec of decoders) {
         if (!dec) continue;
@@ -250,49 +263,45 @@ export class ForwarderService {
       }
     }
 
-    if (fwd.condition) {
-      const ok = await SimilieQuery.evaluate(fwd.condition, ctx);
+    if (template.condition) {
+      const ok = await SimilieQuery.evaluate(template.condition, ctx);
       if (!ok) return;
     }
 
     // 2) Map transforms
-
-    if (fwd.mapIds?.length) {
-      const maps = await ForwardMap.find({ where: { id: In(fwd.mapIds) } });
+    if (template.mapIds?.length) {
+      const maps = await ForwardMap.find({
+        where: { id: In(template.mapIds) },
+      });
       //   console.log("GOT THESE MAPS", ctx.payload, fwd.mapIds, maps);
       if (
         typeof ctx.payload === "object" &&
         !Array.isArray(ctx.payload) &&
         maps.length
       ) {
-        ctx.payload = this.runMapper(ctx.payload, maps, ctx);
+        ctx.message = this.runMapper(ctx.message, maps, ctx);
+        ctx.payload = ctx.message;
       }
     }
 
-    // for (const target of fwd.targets || []) {
-    //   if (target.kind === ForwarderTargetKind.HTTP) {
-    //     this.processHTTPTarget(target as HttpTarget, ctx);
-    //   } else if (target.kind === ForwarderTargetKind.MQTT) {
-    //     this.processMQTTTarget(target as MqttTarget, ctx);
-    //   }
-    // }
+    if (template.transformerIds?.length) {
+      const decoders = await Decoder.find({
+        where: { id: In(template.transformerIds) },
+      });
+      for (const dec of decoders) {
+        if (!dec) continue;
+        // each decoder takes the output of the previous as input
+        ctx.message = await Decoder.decode(
+          dec,
+          this.convertToDecodeContent(ctx),
+        );
+        ctx.payload = ctx.message; // also set payload for templates
+      }
+    }
 
     await cb(fwd.targets || [], fwd, ctx);
   }
 
-  //   private async resolveParameters(scope: string) {
-  //     const rows = await ParameterValue.find({
-  //       where: [{ scope }, { scope: "global" }],
-  //     });
-  //     const params: Record<string, string> = {};
-  //     const secrets: Record<string, string> = {};
-  //     for (const r of rows) {
-  //       if (r.isSecret)
-  //         secrets[r.key] = await decryptAtRuntime(r.valueEncrypted!);
-  //       else params[r.key] = r.valuePlain ?? "";
-  //     }
-  //     return { params, secrets };
-  //   }
   public static interpolate(template: string, bag: Record<string, any>) {
     return template.replace(/\{([^}]+)\}/g, (_, expr) => {
       // allow literal payload injection (already JSON string)
