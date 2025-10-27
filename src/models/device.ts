@@ -4,13 +4,65 @@ import {
   EllipsiesBaseModelUUID,
   BeforeInsert,
   QueryAgent,
+  ExpressRequest,
+  ExpressResponse,
+  BadRequestError,
+  NotAcceptableError,
 } from "@similie/ellipsies";
-import { AwsCertificateManager } from "src/services";
+import {
+  AwsCertificateManager,
+  PlatformIOBuilder,
+  SimilieQuery,
+} from "src/services";
 import { RedisCache } from "src/services/redis";
-import { generateUniqueId } from "src/utils/tools";
+import { generateUniqueId, UUID } from "src/utils/tools";
+import IdentityCertificates from "./certificate";
+import SourceRepository from "./repository";
+import { DeviceSensor, Sensor } from "./sensor";
+import { SensorTypeRules } from "src/services/sensor";
+import { SensorType } from "./types";
 
+@Entity("device_profile", { schema: "public" })
+export class DeviceProfile extends EllipsiesBaseModelUUID {
+  @Column("varchar", {
+    name: "name",
+  })
+  public name: string;
+  @Column("jsonb", {
+    name: "config_schema",
+    default: () => "'{}'",
+  })
+  public configSchema: Record<string, any>;
+  @Column("jsonb", {
+    name: "def_config_schema",
+    default: () => "'{}'",
+  })
+  public defConfigSchema: Record<string, any>;
+  @Column("text", {
+    name: "script",
+    nullable: true,
+  })
+  public script?: string;
+  @Column("uuid", {
+    name: "avatar",
+    nullable: true,
+  })
+  public avatar?: UUID;
+
+  @Column("uuid", {
+    name: "repository",
+    nullable: true,
+  })
+  public repository?: UUID;
+
+  @Column("jsonb", {
+    name: "partitions",
+    default: () => "'[]'",
+  })
+  public partitions?: { address: number; type: string }[];
+}
 @Entity("device", { schema: "public" })
-export default class Device extends EllipsiesBaseModelUUID {
+export class Device extends EllipsiesBaseModelUUID {
   @Column("varchar", {
     name: "name",
   })
@@ -55,6 +107,12 @@ export default class Device extends EllipsiesBaseModelUUID {
   })
   public owner?: string;
 
+  @Column("uuid", {
+    name: "profile",
+    nullable: true,
+  })
+  public profile?: string;
+
   @Column("timestamp with time zone", {
     name: "last_touched",
     nullable: true,
@@ -64,6 +122,151 @@ export default class Device extends EllipsiesBaseModelUUID {
   @BeforeInsert()
   setDefaults() {
     this.identity = this.identity || generateUniqueId();
+  }
+
+  public static async getSensorsForDevice(deviceId: string) {
+    const agent = new QueryAgent<Device>(Device, { where: { id: deviceId } });
+    const device = await agent.findOneById(deviceId);
+    if (!device) {
+      throw new NotAcceptableError("Device not found");
+    }
+    const sensors = await DeviceSensor.queryForDevice(device);
+    return { device, sensors };
+  }
+
+  public static async addSensorToDevice(
+    deviceId: string,
+    identity: string,
+    user?: UUID,
+  ) {
+    const agent = new QueryAgent<Device>(Device, { where: { id: deviceId } });
+    const device = await agent.findOneById(deviceId);
+    if (!device) {
+      throw new NotAcceptableError("Device not found");
+    }
+
+    const deviceSensors = await Sensor.findOne({
+      where: { identity },
+    });
+
+    if (!deviceSensors) {
+      throw new NotAcceptableError("Sensor not found on device");
+    }
+    const sRules = new SensorTypeRules(deviceSensors.type, device);
+    const key = await sRules.build(deviceSensors.identity);
+    const newDeviceSensor = DeviceSensor.create({
+      device: device.id,
+      sensor: deviceSensors.id,
+      key,
+    });
+    const sensor = await newDeviceSensor.save();
+    await sRules.sendAddToChannel(key, device, user);
+
+    return { device, sensor };
+  }
+
+  public static async syncSensorWithDevice(deviceId: string, user?: UUID) {
+    const agent = new QueryAgent<Device>(Device, { where: { id: deviceId } });
+    const device = await agent.findOneById(deviceId);
+    if (!device) {
+      throw new NotAcceptableError("Device not found");
+    }
+
+    const sRules = new SensorTypeRules(SensorType.GENERIC, device);
+    await sRules.sendSyncToChannel(device, user);
+    return device;
+  }
+
+  public static async removeSensorFromDevice(
+    deviceId: string,
+    sensorKey: string,
+    user?: UUID,
+  ) {
+    const agent = new QueryAgent<Device>(Device, { where: { id: deviceId } });
+    const device = await agent.findOneById(deviceId);
+    if (!device) {
+      throw new NotAcceptableError("Device not found");
+    }
+
+    const deviceSensors = await DeviceSensor.find({
+      where: { device: device.id, key: sensorKey },
+    });
+    const sensorToRemove = deviceSensors.pop();
+    if (!sensorToRemove) {
+      throw new NotAcceptableError("Sensor not found on device");
+    }
+
+    await sensorToRemove.remove();
+    const sRules = new SensorTypeRules(deviceSensors.type, device);
+    await sRules.sendRemoveToChannel(sensorToRemove.key, device, user);
+
+    return { device, sensor: sensorToRemove };
+  }
+
+  public static async buildSoftwareForDevice(
+    req: ExpressRequest,
+    res: ExpressResponse,
+  ) {
+    const { device: deviceID, config } = req.body as {
+      device: string;
+      config: Record<string, any>;
+    };
+    if (!deviceID) {
+      throw new BadRequestError("Missing 'device' in request body");
+    }
+    const agent = new QueryAgent<Device>(Device, { where: {} });
+    const device = await agent.findOneById(deviceID);
+
+    if (!device || !device.profile) {
+      throw new NotAcceptableError("Device not found");
+    }
+
+    const record = await IdentityCertificates.findOne({
+      where: { identity: device.identity },
+    });
+
+    if (!record) {
+      throw new NotAcceptableError("No certificates found for device");
+    }
+
+    const { ca, key, cert } = record;
+
+    const deviceProfile = await DeviceProfile.findOne({
+      where: { id: device.profile },
+    });
+
+    if (!deviceProfile || !deviceProfile.repository) {
+      throw new NotAcceptableError("No device profile found");
+    }
+
+    const sourceRepo = await SourceRepository.findOne({
+      where: { id: deviceProfile.repository },
+    });
+
+    if (!sourceRepo) {
+      throw new NotAcceptableError("No source repository found");
+    }
+
+    const interpolatedScript = SimilieQuery.interpolate(
+      deviceProfile.script || "",
+      {
+        device,
+        config: Object.assign({}, deviceProfile.defConfigSchema, config || {}),
+      },
+    );
+    const buildPayload = {
+      device,
+      profile: { ...deviceProfile, script: interpolatedScript },
+      repository: sourceRepo,
+      certificates: {
+        // specific filenames expected by Hyphen Connect firmware
+        "device-cert.pem": cert,
+        "private-key.pem": key,
+        "root-ca.pem": ca,
+      },
+    };
+
+    return await PlatformIOBuilder.runBuildContainer(buildPayload, res);
   }
 
   public static deviceCacheId(identity: string): string {

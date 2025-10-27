@@ -6,7 +6,7 @@ import {
   QueryAgent,
 } from "@similie/ellipsies";
 import { RedisCache } from "src/services";
-import Device from "./device";
+import { Device } from "./device";
 
 @Entity("device_streams", { schema: "public" })
 export default class DeviceStreams extends EllipsiesBaseModelUUID {

@@ -6,3 +6,4 @@ export * from "./jwt";
 export * from "./device-shadow";
 export * from "./secret";
 export * from "./objectq";
+export * from "./imagebuilder";

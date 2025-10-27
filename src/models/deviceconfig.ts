@@ -1,4 +1,10 @@
-import { Entity, Column, EllipsiesBaseModelUUID } from "@similie/ellipsies";
+import {
+  Entity,
+  Column,
+  EllipsiesBaseModelUUID,
+  QueryAgent,
+} from "@similie/ellipsies";
+import { DeviceShadowManager, ServiceRunner } from "src/services";
 import { UUID } from "src/utils/tools";
 
 @Entity("device_config", { schema: "public" })
@@ -55,6 +61,26 @@ export default class DeviceConfig extends EllipsiesBaseModelUUID {
     nullable: true,
   })
   public user: UUID;
+
+  @Column("boolean", {
+    name: "no_nullify",
+    default: false,
+  })
+  public noNullify: boolean;
+
+  public static async createConfig(config: Partial<DeviceConfig>) {
+    const savedDevices: DeviceConfig[] = [];
+    const bases = ServiceRunner.getSubscriptionsBase();
+    const query = new QueryAgent<DeviceConfig>(DeviceConfig);
+    for (const base of bases) {
+      config.topic = DeviceConfig.getConfigTopic(config, base);
+      const createdConfig = await query.create(config);
+      await DeviceShadowManager.sendConfigDetails(createdConfig);
+      savedDevices.push(createdConfig);
+    }
+    // Implement your logic to send the device config
+    return savedDevices.length === 1 ? savedDevices.pop() : savedDevices;
+  }
 
   public static getConfigTopic(config: Partial<DeviceConfig>, base: string) {
     if (!config.actionName) {

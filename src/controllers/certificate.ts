@@ -37,9 +37,9 @@ export default class IdentityController extends EllipsiesController<IdentityCert
     }
     // 2️⃣ Create ZIP archive
     const zip = new JSZip();
-    zip.file(`${identity}/certificate.pem`, record.cert);
-    zip.file(`${identity}/private.key`, record.key);
-    zip.file(`${identity}/rootCA.pem`, record.ca);
+    zip.file(`${identity}/device-cert.pem`, record.cert);
+    zip.file(`${identity}/private-key.pem`, record.key);
+    zip.file(`${identity}/root-ca.pem`, record.ca);
 
     const zipBuffer = await zip.generateAsync({
       type: "nodebuffer",

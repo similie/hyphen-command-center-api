@@ -33,17 +33,7 @@ export default class DeviceConfigController extends EllipsiesController<DeviceCo
   public override async create(
     @Body() config: Partial<DeviceConfig>,
   ): Promise<DeviceConfig | DeviceConfig[]> {
-    const savedDevices: DeviceConfig[] = [];
-    const bases = ServiceRunner.getSubscriptionsBase();
-    //
-    for (const base of bases) {
-      config.topic = DeviceConfig.getConfigTopic(config, base);
-      const createdConfig = await super.create(config);
-      DeviceShadowManager.sendConfigDetails(createdConfig);
-      savedDevices.push(createdConfig);
-    }
-    // Implement your logic to send the device config
-    return savedDevices.length === 1 ? savedDevices.pop() : savedDevices;
+    return DeviceConfig.createConfig(config);
   }
 
   public override async update(

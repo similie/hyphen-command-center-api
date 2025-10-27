@@ -51,7 +51,7 @@ export default class Decoder extends EllipsiesBaseModelUUID {
             }
         };
         ; return decode(payload, context, libs);`;
-    console.log("Decoding with codec:", runFunction);
+    // console.log("Decoding with codec:", runFunction);
 
     try {
       // Build a sandboxed function

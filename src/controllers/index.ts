@@ -1,5 +1,9 @@
 export { default as IdentityCertificatesController } from "./certificate";
-export { default as DeviceController } from "./device";
+export {
+  DeviceController,
+  RepositoryController,
+  DeviceProfileController,
+} from "./device";
 export { default as DeviceRegistrationController } from "./deviceregistration";
 export { default as HeartbeatController } from "./heartbeat";
 export { default as DeviceConfigController } from "./deviceconfig";
@@ -11,3 +15,4 @@ export {
   ForwarderController,
 } from "./forwarder";
 export { default as DecoderController } from "./decoder";
+export { default as SensorController } from "./sensor";

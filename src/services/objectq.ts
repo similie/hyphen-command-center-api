@@ -3,6 +3,49 @@
  */
 export class SimilieQuery {
   /**
+   * Interpolates placeholders like {device.identity} or {config.apn}
+   * in a string or object template using deep path lookup.
+   *
+   * Supports nested objects, arrays, and strings.
+   * Escaped braces {{ ... }} are preserved.
+   *
+   * @example
+   * const tpl = "Device={device.identity} APN={config.apn}";
+   * SimilieQuery.interpolate(tpl, { device: { identity: "A1" }, config: { apn: "timor" } });
+   * // → "Device=A1 APN=timor"
+   */
+  public static interpolate(template: any, data: Record<string, any>): any {
+    // recursively walk through arrays and objects
+    if (Array.isArray(template)) {
+      return template.map((v) => this.interpolate(v, data));
+    }
+    if (template && typeof template === "object") {
+      const result: Record<string, any> = {};
+      for (const [k, v] of Object.entries(template)) {
+        result[k] = this.interpolate(v, data);
+      }
+      return result;
+    }
+
+    // only interpolate strings
+    if (typeof template !== "string") return template;
+
+    // Replace escaped {{ ... }} → keep braces
+    const escapeToken = "__ESCAPED_BRACE__";
+    template = template.replace(
+      /\{\{(.*?)\}\}/g,
+      (_, inner) => `{${inner}}${escapeToken}`,
+    );
+
+    // Match {path.to.value}
+    return template
+      .replace(/\{([\w.[\]0-9_-]+)\}/g, (_, path) => {
+        const value = this.get(data, path);
+        return value !== undefined && value !== null ? String(value) : "";
+      })
+      .replace(new RegExp(escapeToken, "g"), ""); // clean escape markers
+  }
+  /**
    *
    * @param obj The object to query
    * @param path The path to the property, e.g. "a.b[0].c"
@@ -22,7 +65,6 @@ export class SimilieQuery {
       .replace(/\[(\w+)\]/g, ".$1") // convert [0] → .0
       .replace(/^\./, "") // strip leading dot
       .split(".");
-
     let result = obj;
     for (const key of keys) {
       if (result != null && Object.prototype.hasOwnProperty.call(result, key)) {

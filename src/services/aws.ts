@@ -100,13 +100,14 @@ export class AwsCertificateManager {
   // ───────────────────────────────────────────────────────────────
   // 🔐 TERMINATE CERTIFICATE ONLY
   // ───────────────────────────────────────────────────────────────
-  public async terminateCertificate(
-    record: IdentityCertificates,
-  ): Promise<void> {
+  public async terminateCertificate(deviceIdentity: string): Promise<void> {
+    const record = await IdentityCertificates.findOne({
+      where: { identity: deviceIdentity },
+    });
     const identity = record.identity;
     const certificateArn = record.certArn;
     const certificateId = record.certId;
-
+    console.log(`🧹 Terminating certificate for '${identity}'...`, record);
     if (!certificateId || certificateId.length < 64) {
       console.warn(`⚠️ Invalid or missing certificateId for '${identity}'`);
       await record.remove();

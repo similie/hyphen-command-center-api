@@ -6,8 +6,7 @@ export enum ParameterValueOwnerBy {
   DEVICE = "device",
 }
 
-export type ParameterToForwardValue = {
-  key: string;
-  required: boolean;
-  value?: string;
-};
+export enum DeviceConfigActionType {
+  FUNCTION = "Function",
+  VARIABLE = "Variable",
+}

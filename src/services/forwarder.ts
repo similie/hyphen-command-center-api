@@ -13,7 +13,7 @@ import {
   MsgCtx,
   ParameterValueOwnerBy,
 } from "src/models/types";
-import { In, QueryAgent } from "@similie/ellipsies";
+import { In } from "@similie/ellipsies";
 import { SimilieQuery } from "./objectq";
 import fetch, { RequestInit } from "node-fetch";
 import { UUID } from "src/utils/tools";
@@ -36,12 +36,7 @@ export function mqttTopicMatch(topic: string, pattern: string) {
 }
 
 export class ForwarderService {
-  private readonly fmQueryAgent: QueryAgent<ForwardMap>;
-  private readonly dqQueryAgent: QueryAgent<Decoder>;
-  constructor() {
-    this.fmQueryAgent = new QueryAgent<ForwardMap>(ForwardMap, {});
-    this.dqQueryAgent = new QueryAgent<Decoder>(Decoder, {});
-  }
+  constructor() {}
   async processMessageForDevice(
     owner: UUID,
     ownedBy: ParameterValueOwnerBy,

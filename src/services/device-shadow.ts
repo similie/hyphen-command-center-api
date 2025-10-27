@@ -3,6 +3,7 @@ import {
   Device,
   DeviceConfig,
   DeviceRegistration,
+  DeviceSensor,
   DeviceStream,
   Forwarder,
   Heartbeat,
@@ -36,10 +37,11 @@ export class DeviceShadowManager {
   private readonly QUEUE_CONNECTION_MESSAGE_CONFIG =
     "process-device-config-stream";
   private readonly QUEUE_CONFIG_PROCESS = "processed-pending-config";
+  private readonly QUEUE_DEVICE_SENSOR = "processed-device-sensor";
   private readonly _queue: jQueue;
   private readonly _queueConfig: jQueue;
   private readonly _configQueue: jQueue;
-
+  private readonly _sensorQueue: jQueue;
   private static _forwardQueue: jQueue;
   private static _forwardQueueArtifacts: jQueue;
   private constructor() {
@@ -51,6 +53,7 @@ export class DeviceShadowManager {
     );
     this._queue = QueueManager.get.queue(this.QUEUE_CONNECTION_MESSAGE);
     this._configQueue = QueueManager.get.queue(this.QUEUE_CONFIG_PROCESS);
+    this._sensorQueue = QueueManager.get.queue(this.QUEUE_DEVICE_SENSOR);
     this._queueConfig = QueueManager.get.queue(
       this.QUEUE_CONNECTION_MESSAGE_CONFIG,
       QueueManager.get.delaySecondsOpt(5),
@@ -119,6 +122,10 @@ export class DeviceShadowManager {
 
   private variableResultsTopic(deviceId: string) {
     return `/Post/Variable/Result/${deviceId}`;
+  }
+
+  private deviceSyncTopic(topic: string) {
+    return topic.includes(`/Get/Devices`);
   }
 
   private isVariableOrFunctionTopic(topic: string, deviceId: string) {
@@ -293,6 +300,35 @@ export class DeviceShadowManager {
     return null;
   }
 
+  private async setDevicesApplied(
+    message: Buffer<ArrayBufferLike>,
+    device: Device,
+  ) {
+    try {
+      const msgStr = message.toString();
+      const messageValue = JSON.parse(msgStr) as {
+        device: string;
+        payload: Record<string, string>;
+      };
+      console.log("Setting device applied with payload:", messageValue);
+      if (!messageValue.payload) {
+        return;
+      }
+
+      const sensors: DeviceSensor[] = [];
+      for (const [_key, value] of Object.entries(messageValue.payload)) {
+        const ds = await DeviceSensor.applyDeviceSync(value, device);
+        if (ds) {
+          sensors.push(ds);
+        }
+      }
+
+      this._sensorQueue.add(this.QUEUE_DEVICE_SENSOR, { sensors, device });
+    } catch (e) {
+      console.error("Error setting devices applied", e);
+    }
+  }
+
   private async processActions(
     topic: string,
     message: Buffer<ArrayBufferLike>,
@@ -318,6 +354,8 @@ export class DeviceShadowManager {
     } else if (this.isDeliveryTopic(topic)) {
       console.log(`Device ${device.identity} delivery received.`);
       await this.checkTopicForwarderForDevice(topic, message, device);
+    } else if (this.deviceSyncTopic(topic)) {
+      await this.setDevicesApplied(message, device);
     }
   }
 
@@ -341,6 +379,14 @@ export class DeviceShadowManager {
         },
       );
     }
+  }
+
+  public static async sendFunctionToDevice(
+    device: Device,
+    func: string,
+    body: string,
+  ) {
+    const topic = `/Post/Function/${device.identity}/${func}/`;
   }
 
   public static async sendMQTTMessage(topic: string, message: string = "") {
@@ -468,7 +514,6 @@ export class DeviceShadowManager {
           target,
           data.ctx,
         );
-        console.log("WHAT THE FCK", deliverables);
         if (!deliverables) {
           continue;
         }
