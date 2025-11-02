@@ -2,7 +2,6 @@ import {
   Ellipsies,
   COMMON_API_SERVICE_ROUTES, // /api/v2/
   DEFAULT_SERVICE_PORT,
-  UnauthorizedError,
 } from "@similie/ellipsies";
 
 import * as models from "../models";
@@ -10,11 +9,17 @@ import * as controllers from "../controllers";
 import { AuthMiddleware } from "../middleware";
 
 export const startServer = async () => {
+  const routePrefix =
+    process.env.API_SERVICE_ROUTES || COMMON_API_SERVICE_ROUTES;
+  const servicePort = process.env.SERVICE_PORT
+    ? parseInt(process.env.SERVICE_PORT, 10)
+    : DEFAULT_SERVICE_PORT;
+
   const ellipsies = new Ellipsies({
     controllers,
     models,
-    port: DEFAULT_SERVICE_PORT,
-    prefix: COMMON_API_SERVICE_ROUTES,
+    port: servicePort,
+    prefix: routePrefix,
     middleware: [AuthMiddleware],
     cors: true,
   });
@@ -31,7 +36,7 @@ export const startServer = async () => {
   );
 
   console.log(
-    `🚀 CommandCenter API running on http://localhost:${DEFAULT_SERVICE_PORT}`,
+    `🚀 CommandCenter API running on http://localhost:${servicePort}/${routePrefix}`,
   );
 
   await ellipsies.start();
