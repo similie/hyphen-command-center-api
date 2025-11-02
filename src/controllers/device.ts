@@ -21,7 +21,8 @@ import { SourceRepository } from "src/models";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { Sensor } from "src/models/sensor";
+import { DeviceSensor, Sensor } from "src/models/sensor";
+import { DeviceContentItems } from "src/models/types";
 @EllipsiesExtends("repositories")
 export class RepositoryController extends EllipsiesController<SourceRepository> {
   public constructor() {
@@ -48,11 +49,8 @@ export class DeviceController extends EllipsiesController<Device> {
     }
     next();
   })
-  public override async create(
-    @Body() body: Partial<Device>,
-  ): Promise<Device | Device[]> {
-    console.log("Creating device with body:", body);
-    const device = await Device.create(body);
+  public override async create(@Body() body: Partial<Device>): Promise<Device> {
+    const device = await Device.createDevice(body);
     return device;
   }
 
@@ -70,10 +68,22 @@ export class DeviceController extends EllipsiesController<Device> {
     }
   }
 
+  @Get("/statistics")
+  public async getDeviceStatistics(): Promise<{ totalDevices: number }> {
+    return Device.deviceStatistics();
+  }
+
+  @Get("/details/:identity")
+  public async getDeviceDetails(
+    @Param("identity") identity: string,
+  ): Promise<DeviceContentItems> {
+    return Device.deviceDetails(identity);
+  }
+
   @Post("/invalidate-certificate")
   public async rebuildCertificate(
     @Body() body: Partial<Device>,
-  ): Promise<Device> {
+  ): Promise<Device[]> {
     return Device.buildCertificateForDevice(body);
   }
 
@@ -88,7 +98,7 @@ export class DeviceController extends EllipsiesController<Device> {
   public async addSensorToDevice(
     @Body() body: { deviceId: string; identity: string },
     @Res() res: ExpressResponse,
-  ): Promise<{ device: Device; sensor: Sensor }> {
+  ): Promise<{ device: Device; sensor: DeviceSensor }> {
     return Device.addSensorToDevice(
       body.deviceId,
       body.identity,
@@ -100,7 +110,7 @@ export class DeviceController extends EllipsiesController<Device> {
   public async syncSensorWithDevice(
     @Body() body: { deviceId: string },
     @Res() res: ExpressResponse,
-  ): Promise<{ device: Device }> {
+  ): Promise<Device> {
     return Device.syncSensorWithDevice(body.deviceId, res.locals.user?.uid);
   }
 
@@ -108,7 +118,7 @@ export class DeviceController extends EllipsiesController<Device> {
   public async removeSensorFromDevice(
     @Body() body: { deviceId: string; sensorKey: string },
     @Res() res: ExpressResponse,
-  ): Promise<{ device: Device; sensor: Sensor }> {
+  ): Promise<{ device: Device; sensor: DeviceSensor }> {
     return Device.removeSensorFromDevice(
       body.deviceId,
       body.sensorKey,
@@ -123,9 +133,12 @@ export class DeviceController extends EllipsiesController<Device> {
     @Res() res: ExpressResponse,
   ): Promise<ExpressResponse> {
     // Implement logic to retrieve the artifact for the given buildId
+    const hostBuildRoot =
+      process.env.HOST_BUILDS_PATH || path.join(os.tmpdir(), "similie-builds");
     const zipPath = path.join(
-      os.tmpdir(),
-      "similie-builds",
+      hostBuildRoot,
+      // os.tmpdir(),
+      // "similie-builds",
       buildId,
       `${deviceId}.zip`,
     );

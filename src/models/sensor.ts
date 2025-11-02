@@ -112,4 +112,41 @@ export class Sensor extends EllipsiesBaseModelUUID {
     default: () => "'{}'",
   })
   public meta: Record<string, any>;
+
+  public seeds() {
+    return [
+      {
+        name: "ATMOS41",
+        identity: "all_weather",
+        description:
+          "A multi-parameter sensor for environmental data collection",
+        pins: [],
+        max: 1,
+        sensorType: "sdi-12",
+        meta: {},
+        id: "0ce53b1e-c885-46f1-a8f0-0b7ce4d73ad8",
+      },
+      {
+        name: "TEROS11",
+        identity: "soil_moisture",
+        description: "A soil moisture and soil temperature sensor from Meter",
+        pins: [],
+        max: 8,
+        sensorType: "sdi-12",
+        meta: {},
+        id: "899dfa1c-979f-4b63-a731-b504501b5cfb",
+      },
+      {
+        name: "Elemental Battery",
+        identity: "battery",
+        description:
+          "Hyphen Elemental 4050 XR (8.4v) or 4060 XR (12.6v) battery system on I2C",
+        pins: [],
+        max: 1,
+        sensorType: "i2c",
+        meta: {},
+        id: "75b46c85-ceea-4dc8-9941-4b36e3821454",
+      },
+    ];
+  }
 }

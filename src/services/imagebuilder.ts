@@ -83,8 +83,11 @@ export class PlatformIOBuilder {
   };
 
   public static ensureBuildDir(buildId: string) {
-    const hostTmpRoot = os.tmpdir(); // System temp dir
-    const hostBuildPath = path.join(hostTmpRoot, "similie-builds", buildId);
+    // const hostTmpRoot = os.tmpdir(); // System temp dir image_builds
+    const hostBuildRoot =
+      process.env.HOST_BUILDS_PATH || path.join(os.tmpdir(), "similie-builds");
+
+    const hostBuildPath = path.join(hostBuildRoot, buildId);
     fs.mkdirSync(hostBuildPath, { recursive: true });
 
     return hostBuildPath;
@@ -93,14 +96,21 @@ export class PlatformIOBuilder {
     payload: BuildPayload,
     res: ExpressResponse,
   ) {
-    console.log("Starting build container with payload for device:", payload);
+    // console.log("Starting build container with payload for device:", payload);
+    if (!payload.repository.containerName) {
+      throw new Error("Repository missing container name for build");
+    }
+
     const buildId = randomUUID();
     const containerName = `similie-builder-${buildId}`;
     console.log(`🚀 Starting container: ${containerName}`);
     const buildPath = this.ensureBuildDir(buildId);
-    console.log(`📁 Created host build directory: ${buildPath}`);
+    console.log(
+      `📁 Created host build directory: ${buildPath} for ${payload.repository.containerName}`,
+    );
+
     const container: Container = await this.docker.createContainer({
-      Image: "similie/platformio-builder:latest",
+      Image: payload.repository.containerName,
       name: containerName,
       Tty: false,
       AttachStdout: true,
@@ -159,6 +169,7 @@ export class PlatformIOBuilder {
     // const result = await container.wait();
     await container.remove({ force: true });
     const zipPath = path.join(buildPath, `${payload.device.identity}.zip`);
+    res.write(`data: ${zipPath}\n\n`);
     if (fs.existsSync(zipPath)) {
       res.write("data: Build complete\n\n");
       res.write(`data: __BUILD_ID__:${buildId}\n\n`);

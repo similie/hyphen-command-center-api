@@ -7,3 +7,5 @@ export * from "./device-shadow";
 export * from "./secret";
 export * from "./objectq";
 export * from "./imagebuilder";
+export * from "./leader-lock";
+export * from "./certificate-manager";

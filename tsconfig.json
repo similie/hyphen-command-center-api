@@ -15,12 +15,7 @@
     "strictPropertyInitialization": false,
     // Aliases
     "baseUrl": ".",
-    "paths": {
-      "@similie/ellipsies": ["../ellipsies/dist/index.js"],
-      "@similie/hyphen-command-types": [
-        "../Hyphen-CommandCenter-Types/dist/index.js"
-      ]
-    }
+    "paths": {}
   },
   "include": ["src"]
 }

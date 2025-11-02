@@ -108,6 +108,7 @@ export class ForwarderService {
 
   private async pullKeys(fwd: Forwarder, ctx: MsgCtx) {
     const keys: Record<string, Record<string, string>> = {};
+    ctx.keys = keys;
     const keyValues = await ParameterValue.find({
       where: {
         owner: fwd.id,
@@ -131,7 +132,7 @@ export class ForwarderService {
   private static parseHeaders(targetHeaders: string[] | UUID[], ctx: MsgCtx) {
     const headers: Record<string, string> = {};
     for (const h of targetHeaders || []) {
-      if (!ctx.keys.hasOwnProperty(h)) {
+      if (!ctx.keys || !ctx.keys.hasOwnProperty(h)) {
         continue;
       }
       const head = ctx.keys[h];

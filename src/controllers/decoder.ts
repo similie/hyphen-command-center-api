@@ -7,8 +7,8 @@ import {
   Post,
   Body,
 } from "@similie/ellipsies";
-import { Decoder, Device } from "src/models";
-import { generateUniqueId, generateUniqueUUID, UUID } from "src/utils/tools";
+import { Decoder } from "src/models";
+import { generateUniqueId, generateUniqueUUID } from "src/utils/tools";
 
 @EllipsiesExtends("decoders")
 export default class DecoderController extends EllipsiesController<Decoder> {

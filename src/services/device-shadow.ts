@@ -27,7 +27,7 @@ import {
 } from "src/models/types";
 import fetch, { RequestInit } from "node-fetch";
 import { ForwarderService } from "./forwarder";
-import { AwsCertificateManager } from "./aws";
+import { CertificateManager } from "./certificate-manager";
 export class DeviceShadowManager {
   private static _instance: DeviceShadowManager | undefined;
   private readonly QUEUE_CONNECTION_MESSAGE = "process-device-stream";
@@ -428,7 +428,7 @@ export class DeviceShadowManager {
       where: { state: DeviceConfigEnum.WAITING, identity: device.identity },
     });
     // we are going to re-fetch the device to ensure we have the latest
-    const values = await agent.getObjects();
+    const values = (await agent.getObjects()) as DeviceConfig[];
 
     console.log(
       `Found ${values.length} pending config(s) for device ${device.identity}`,
@@ -573,7 +573,7 @@ export class DeviceShadowManager {
     await DeviceShadowManager.runForwardJob({
       targets: [...targets],
       ctx: { ...ctx },
-      fwd: { ...fwd },
+      fwd: fwd,
       attempts: 0,
     });
   }
@@ -597,12 +597,12 @@ export class DeviceShadowManager {
         this.processForwarderCallback.bind(this),
       );
 
-      const systemID = AwsCertificateManager.instance.id;
+      const systemID = CertificateManager.instance.id;
       if (!systemID) {
         return;
       }
       await forwarder.processMessageForDevice(
-        systemID,
+        systemID as UUID,
         ParameterValueOwnerBy.SYSTEM,
         { ...payload },
         this.processForwarderCallback.bind(this),

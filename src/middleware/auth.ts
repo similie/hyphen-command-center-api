@@ -1,5 +1,4 @@
 import {
-  ExpressMiddlewareInterface,
   Middleware,
   UnauthorizedError,
   Service,
@@ -10,7 +9,7 @@ import {
 import { verifyTokenValidity } from "src/services";
 @Service()
 @Middleware({ type: "before" })
-export class AuthMiddleware implements ExpressMiddlewareInterface {
+export class AuthMiddleware {
   use(req: ExpressRequest, res: ExpressResponse, next: ExpressNext): any {
     const decodedUrl = verifyTokenValidity(req, res);
     if (!decodedUrl) {

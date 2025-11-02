@@ -1,1 +1,0 @@
-{"version":3,"file":"certificate.d.ts","sourceRoot":"","sources":["../../src/models/certificate.ts"],"names":[],"mappings":"AAAA,OAAO,EAIL,sBAAsB,EACvB,MAAM,oBAAoB,CAAC;AAI5B,MAAM,CAAC,OAAO,OAAO,oBAAqB,SAAQ,sBAAsB;IAC/D,IAAI,EAAE,MAAM,CAAC;IAKb,QAAQ,EAAE,MAAM,CAAC;IAIjB,IAAI,EAAE,MAAM,CAAC;IAIb,GAAG,EAAE,MAAM,CAAC;IAMZ,EAAE,EAAE,MAAM,CAAC;CAGnB"}

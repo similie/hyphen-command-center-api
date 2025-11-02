@@ -6,7 +6,7 @@ import {
 } from "@similie/ellipsies";
 import { Forwarder, ForwarderTemplate, ForwardMap } from "src/models";
 import { ParameterValueOwnerBy } from "src/models/types";
-import { AwsCertificateManager } from "src/services";
+import { CertificateManager } from "src/services";
 
 @EllipsiesExtends("forwarders")
 export class ForwarderController extends EllipsiesController<Forwarder> {
@@ -22,13 +22,12 @@ export class ForwarderController extends EllipsiesController<Forwarder> {
       req.body.owner === undefined &&
       req.body.ownedBy === ParameterValueOwnerBy.SYSTEM
     ) {
-      req.body.owner = AwsCertificateManager.instance.id;
+      req.body.owner = CertificateManager.instance.id;
     }
 
     next();
   })
   public override async create(@Body() value: Partial<ForwarderTemplate>) {
-    console.log("Creating forwarder with value:", value);
     return super.create(value);
   }
 }

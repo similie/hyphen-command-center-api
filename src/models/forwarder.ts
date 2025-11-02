@@ -30,7 +30,7 @@ export default class Forwarder extends EllipsiesBaseModelUUID {
   @Column("varchar", {
     name: "owned_by",
     nullable: true,
-    maxLength: 32,
+    length: 32,
     default: ParameterValueOwnerBy.SYSTEM,
   })
   public ownedBy?: ParameterValueOwnerBy;

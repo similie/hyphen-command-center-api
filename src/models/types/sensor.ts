@@ -1,3 +1,5 @@
+import { DeviceSensor, Sensor } from "../sensor";
+
 export enum SensorType {
   GENERIC = "generic",
   SDI_12 = "sdi-12",
@@ -7,3 +9,5 @@ export enum SensorType {
   SPI = "spi",
   UART = "uart",
 }
+
+export type SensorWithKey = Sensor & { relation: DeviceSensor };

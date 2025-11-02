@@ -4,13 +4,13 @@ import {
   ControllerFunctionNames,
   UseBefore,
   Body,
-  IModelUpdateValues,
   BadRequestError,
   Post,
   InternalServerError,
+  IModelUpdateValues,
 } from "@similie/ellipsies";
 import { DeviceConfig } from "src/models";
-import { DeviceShadowManager, ServiceRunner } from "src/services";
+import { DeviceShadowManager } from "src/services";
 import { DeviceConfigEnum } from "../models/types";
 
 @EllipsiesExtends("devicesconfig")
@@ -38,9 +38,9 @@ export default class DeviceConfigController extends EllipsiesController<DeviceCo
 
   public override async update(
     body: IModelUpdateValues<DeviceConfig>,
-  ): Promise<DeviceConfig> {
+  ): Promise<DeviceConfig | DeviceConfig[] | null> {
     if (!body.query || !body.query.id) {
-      throw BadRequestError("ID is required for update");
+      throw new BadRequestError("ID is required for update");
     }
     return super.update({
       query: body.query,

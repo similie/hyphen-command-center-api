@@ -75,8 +75,10 @@ export default class DeviceConfig extends EllipsiesBaseModelUUID {
     for (const base of bases) {
       config.topic = DeviceConfig.getConfigTopic(config, base);
       const createdConfig = await query.create(config);
-      await DeviceShadowManager.sendConfigDetails(createdConfig);
-      savedDevices.push(createdConfig);
+      await DeviceShadowManager.sendConfigDetails(
+        createdConfig as DeviceConfig,
+      );
+      savedDevices.push(createdConfig as DeviceConfig);
     }
     // Implement your logic to send the device config
     return savedDevices.length === 1 ? savedDevices.pop() : savedDevices;

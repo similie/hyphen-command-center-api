@@ -2,10 +2,13 @@ import mqtt, { MqttClient, type IClientOptions } from "mqtt";
 import IdentityCertificates from "../models/certificate";
 import SystemIdentity from "../models/identity";
 import { ServiceRunner } from "src/services";
+import { LeaderElector } from "src/services/leader-lock";
+import { generateUniqueId } from "src/utils/tools";
 
 export class MqttClientManager {
   private static client: MqttClient | null = null;
   private static serviceRunner: ServiceRunner;
+  private static elector = LeaderElector.get();
   static async connect(identity: SystemIdentity) {
     const cert = await IdentityCertificates.findOne({
       where: { identity: identity.identity },
@@ -20,7 +23,7 @@ export class MqttClientManager {
       key: Buffer.from(cert.key),
       cert: Buffer.from(cert.cert),
       ca: Buffer.from(cert.ca),
-      clientId: identity.identity,
+      clientId: identity.identity + "-" + generateUniqueId(6),
       reconnectPeriod: 5000,
       keepalive: 60, // ping interval (seconds)
       clean: false, // persistent session
@@ -28,15 +31,46 @@ export class MqttClientManager {
 
     const url = `mqtts://${identity.host}:${identity.port}`;
     console.log(`🔗 Connecting to AWS IoT MQTT at ${url}`);
-
+    // const isLeader = await LeaderElector.isLeader();
+    // console.log("I am leader:", isLeader);
     this.client = mqtt.connect(url, options);
 
     this.serviceRunner = new ServiceRunner(this.client);
 
-    this.client.on("connect", () => {
+    // elsewhere
+    if (LeaderElector.get().amLeader()) {
+      // just a read; do not start work here, wait for 'elected'
+      console.log("✅ This instance is the leader.");
+    }
+
+    this.client.on("connect", async () => {
       console.log(`✅ Connected to AWS IoT Core as ${identity.identity}`);
       this.serviceRunner.connected = true;
-      this.serviceRunner.setSubscriptions();
+
+      try {
+        await this.elector.shutdown(); // ensure clean slate
+        await this.elector.init(process.env.REDIS_CONFIG_URL!);
+      } catch (err) {
+        console.error("⚠️ Error restarting leader elector:", err);
+      }
+
+      // Always (re)bind listeners to the *current* elector emitter
+      // since it may have been recreated by init()
+      this.elector.removeAllListeners("elected");
+      this.elector.removeAllListeners("revoked");
+      /**
+       * 👑 Leader election won
+       * In a multi-instance setup, only the leader should subscribe to MQTT topics
+       */
+      this.elector.on("elected", () => {
+        console.log("👑 Became leader – subscribing to MQTT.");
+        this.serviceRunner.setSubscriptions(); // start leader-only work
+      });
+
+      this.elector.on("revoked", () => {
+        console.log("🥾 Lost leadership – unsubscribing from MQTT.");
+        this.serviceRunner.teardownSubscriptions(); // stop leader-only work
+      });
     });
 
     this.client.on("error", (err) => {
@@ -49,9 +83,14 @@ export class MqttClientManager {
       this.serviceRunner.connected = false;
     });
 
-    this.client.on("close", () => {
+    this.client.on("close", async () => {
       console.warn("⚠️  MQTT connection closed.");
       this.serviceRunner.connected = false;
+      try {
+        await this.elector.shutdown();
+      } catch (err) {
+        console.error("Error shutting down elector:", err);
+      }
     });
 
     this.client.on("offline", () => {

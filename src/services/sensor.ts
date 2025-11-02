@@ -135,6 +135,7 @@ export class SensorTypeRules {
     const deviceConfig = await DeviceConfig.createConfig({
       identity: device.identity,
       user: user,
+      noNullify: true,
       state: DeviceConfigEnum.WAITING,
       actionName: "addDevice",
       actionType: DeviceConfigActionType.FUNCTION,

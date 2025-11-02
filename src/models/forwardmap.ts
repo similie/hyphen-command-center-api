@@ -47,7 +47,7 @@ export class ParameterValue extends EllipsiesBaseModelUUID {
   @Column("varchar", {
     name: "owned_by",
     nullable: true,
-    maxLength: 32,
+    length: 32,
     default: ParameterValueOwnerBy.USER,
   })
   public ownedBy?: ParameterValueOwnerBy;
@@ -112,4 +112,58 @@ export class ForwardMap extends EllipsiesBaseModelUUID {
     default: () => "'[]'",
   })
   public values: Array<Record<string, string>>;
+
+  public seeds() {
+    return [
+      {
+        name: "40x0 BatteryMapper to Parabl",
+        description:
+          "Maps the values of the Hyphen Elemental 4060 or 4070 series of batteries",
+        values: {
+          b_p: "battery_power",
+          b_v: "battery_voltage",
+          bat: "bat_percent",
+          s_v: "solar_voltage",
+        },
+        id: "ff2b45c2-516d-45db-b158-d9727fcfd701",
+      },
+      {
+        name: "All Weather Mapping to Parabl",
+        description:
+          "This is the mapping for the values off the all weather stations",
+        values: {
+          h: "humidity",
+          p: "pressure",
+          s: "strikes",
+          t: "temperature",
+          x: "x_orientation",
+          y: "y_orientation",
+          wd: "wind_direction",
+          ws: "wind_speed",
+          a_p: "atmospheric_pressure",
+          gws: "gust_wind_speed",
+          hst: "humidity_sensor_temperature",
+          pre: "precipitation",
+          s_d: "strike_distance",
+          sol: "solar",
+          wse: "wind_speed_east",
+          wsn: "wind_speed_north",
+        },
+        id: "b66c4262-e94f-48b9-b07f-c17123d9844e",
+      },
+      {
+        name: "SoilMoisture to Parabl ",
+        description: "This maps the soil moisture sensors to parabl",
+        values: {
+          s_t: "soil_temp",
+          vwc: "vwc",
+          s_t_1: "soil_temp",
+          s_t_2: "soil_temp_1",
+          vwc_1: "vwc",
+          vwc_2: "vwc_1",
+        },
+        id: "609f429b-2df2-4aab-bc37-561f0fb07c0f",
+      },
+    ];
+  }
 }

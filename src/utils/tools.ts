@@ -1,6 +1,6 @@
 import CryptoJS from "crypto-js";
 import { v4 } from "uuid";
-import { type UUID as _UUID } from "@similie/hyphen-command-types";
+import { type UUID as _UUID } from "@similie/ellipsies";
 export type UUID = _UUID;
 
 export type MQTTFunctionalResponse = {

@@ -8,9 +8,12 @@ import {
   ExpressResponse,
   BadRequestError,
   NotAcceptableError,
+  MoreThanOrEqual,
+  LessThan,
+  DataSourceRegistry,
 } from "@similie/ellipsies";
 import {
-  AwsCertificateManager,
+  CertificateManager,
   PlatformIOBuilder,
   SimilieQuery,
 } from "src/services";
@@ -20,7 +23,9 @@ import IdentityCertificates from "./certificate";
 import SourceRepository from "./repository";
 import { DeviceSensor, Sensor } from "./sensor";
 import { SensorTypeRules } from "src/services/sensor";
-import { SensorType } from "./types";
+import { BuildPayload, DeviceContentItems, SensorType } from "./types";
+import { Heartbeat } from ".";
+import DeviceStreams from "./devicestream";
 
 @Entity("device_profile", { schema: "public" })
 export class DeviceProfile extends EllipsiesBaseModelUUID {
@@ -28,6 +33,11 @@ export class DeviceProfile extends EllipsiesBaseModelUUID {
     name: "name",
   })
   public name: string;
+  @Column("integer", {
+    name: "offline",
+    default: 15,
+  })
+  public offline: number;
   @Column("jsonb", {
     name: "config_schema",
     default: () => "'{}'",
@@ -60,6 +70,107 @@ export class DeviceProfile extends EllipsiesBaseModelUUID {
     default: () => "'[]'",
   })
   public partitions?: { address: number; type: string }[];
+
+  public seeds() {
+    return [
+      {
+        name: "HyphenElemental4",
+        configSchema: {
+          apn: "string",
+          sim_pin: "string",
+          mqtt_port: "number",
+          wifi_pass: "string",
+          wifi_ssid: "string",
+          topic_base: "string",
+          mqtt_endpoint: "string",
+        },
+        defConfigSchema: {
+          apn: "internet",
+          mqtt_port: 8883,
+          wifi_pass: "ChangeByDesign",
+          wifi_ssid: "Similie\\ Guests",
+          topic_base: "Hy/",
+          mqtt_endpoint: "a2hreerobwhgvz-ats.iot.us-east-1.amazonaws.com",
+        },
+        script:
+          "[env:esp32dev]\n" +
+          "platform = espressif32\n" +
+          "board = esp32dev\n" +
+          "framework = arduino\n" +
+          "monitor_speed = 115200\n" +
+          "upload_speed = 921600\n" +
+          "board_upload.flash_size = 16MB\n" +
+          "board_build.partitions = part_16mb_app.csv\n" +
+          "monitor_filters = esp32_exception_decoder\n" +
+          "board_build.embed_txtfiles =\n" +
+          "  src/certs/root-ca.pem\n" +
+          "  src/certs/device-cert.pem\n" +
+          "  src/certs/private-key.pem\n" +
+          "lib_deps = \n" +
+          "    guernica0131/HyphenConnect@^1.0.3\n" +
+          "    envirodiy/SDI-12@2.1.4\n" +
+          "    emanuelefeola/ArduinoHttpClient@^0.5.0\n" +
+          "    ArduinoJson@^7.4.2\n" +
+          "    https://github.com/similie/Adafruit-VC0706-Serial-Camera-Library\n" +
+          "    greiman/SdFat@^2.2.3\n" +
+          "    adafruit/Adafruit INA219\n" +
+          "  \n" +
+          "build_flags = \n" +
+          " -D CORE_DEBUG_LEVEL=ARDUHAL_LOG_LEVEL_VERBOSE\n" +
+          ' -D CELLULAR_APN=\\"{config.apn}\\"\n' +
+          ' -D GSM_SIM_PIN=\\"{config.sim_pin}\\"\n' +
+          ' -D MQTT_IOT_ENDPOINT=\\"{config.mqtt_endpoint}\\"\n' +
+          " -D MQTT_IOT_PORT={config.mqtt_port} \n" +
+          ' -D DEVICE_PUBLIC_ID=\\"{device.identity}\\" \n' +
+          " -D TINY_GSM_MODEM_SIM7600\n" +
+          " -D LED_PIN=14\n" +
+          " -D UART_BAUD=115200\n" +
+          " -D CELLULAR_PIN_TX=27\n" +
+          " -D CELLULAR_PIN_RX=26\n" +
+          " -D CELLULAR_POWER_PIN_AUX=4\n" +
+          " -D CELLULAR_POWER_PIN=25\n" +
+          ' -D DEFAULT_WIFI_SSID=\\"{config.wifi_ssid}\\"\n' +
+          ' -D DEFAULT_WIFI_PASS=\\"{config.wifi_pass}\\"\n' +
+          ' -D MQTT_TOPIC_BASE=\\"{config.topic_base}\\" \n' +
+          " -D MQTT_MAX_PACKET_SIZE=2048\n" +
+          " -D MQTT_KEEP_ALIVE_INTERVAL=300\n" +
+          " -D MQTT_KEEP_ALIVE_INTERVAL_LOOP_OFFSET=0.04\n" +
+          " -D MQTT_SOCKET_TIMEOUT=20\n" +
+          " -D HYPHEN_THREADED\n" +
+          " -D NETWORK_MODE=2\n" +
+          " -D CONFIG_SPIRAM_USE_CAPS_ALLOC=1\n" +
+          " -D DISABLE_FS_H_WARNING\n" +
+          " -D BOARD_HAS_PSRAM\n" +
+          " -D BUILD_TIMESTAMP=$UNIX_TIME",
+        repository: "0cb25098-35ce-4ac6-a950-b43ab6d723c3",
+        partitions: [
+          { type: "bootloader.bin", address: 4096 },
+          { type: "firmware.bin", address: 65536 },
+          { type: "spiffs.bin", address: 11599872 },
+          { type: "partitions.bin", address: 32768 },
+        ],
+        id: "e45d8b56-20d6-4766-bd96-787fb499516d",
+      },
+    ];
+  }
+
+  public static getProfileCount(): Promise<
+    { profile_id: string; profile_name: string; device_count: number }[]
+  > {
+    const query = `SELECT
+  dp.id        AS profile_id,
+  dp.name      AS profile_name,
+  COUNT(d.id)::integer  AS device_count
+FROM "device_profile" dp
+LEFT JOIN "device" d
+  ON d."profile" = dp."id"
+GROUP BY
+  dp.id,
+  dp.name
+ORDER BY
+  device_count DESC;`;
+    return DataSourceRegistry.getInstance().dataSource.query(query);
+  }
 }
 @Entity("device", { schema: "public" })
 export class Device extends EllipsiesBaseModelUUID {
@@ -121,11 +232,59 @@ export class Device extends EllipsiesBaseModelUUID {
 
   @BeforeInsert()
   setDefaults() {
-    this.identity = this.identity || generateUniqueId();
+    this.identity = this.identity || generateUniqueId(12);
+  }
+
+  public static async deviceStatistics() {
+    const totalDevices = await this.count();
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+    const onlineDevices = await this.count({
+      where: { lastTouched: MoreThanOrEqual(fifteenMinutesAgo) },
+    });
+    const offlineDevices = await this.count({
+      where: { lastTouched: LessThan(fifteenMinutesAgo) },
+    });
+
+    const deviceTypeCount = await DeviceProfile.getProfileCount();
+    const deviceWeeklyCounts = await DeviceStreams.getWeeklyStreamCount();
+
+    return {
+      totalDevices,
+      onlineDevices,
+      offlineDevices,
+      deviceTypeCount,
+      deviceWeeklyCounts,
+    };
+  }
+
+  public static async deviceDetails(
+    identity: string,
+  ): Promise<DeviceContentItems> {
+    const device = await this.findOne({
+      where: { identity },
+    });
+    const sensors = await DeviceSensor.queryForDevice(device);
+    const heartbeat = await Heartbeat.find({
+      where: { device: identity },
+      order: { date: "DESC" },
+      take: 1,
+    });
+
+    const deviceType = await DeviceProfile.findOne({
+      where: { id: device?.profile as UUID },
+    });
+    return {
+      heartbeat: heartbeat[0],
+      device,
+      deviceType,
+      sensors,
+    };
   }
 
   public static async getSensorsForDevice(deviceId: string) {
-    const agent = new QueryAgent<Device>(Device, { where: { id: deviceId } });
+    const agent = new QueryAgent<Device>(Device, {
+      where: { id: deviceId as UUID },
+    });
     const device = await agent.findOneById(deviceId);
     if (!device) {
       throw new NotAcceptableError("Device not found");
@@ -139,24 +298,26 @@ export class Device extends EllipsiesBaseModelUUID {
     identity: string,
     user?: UUID,
   ) {
-    const agent = new QueryAgent<Device>(Device, { where: { id: deviceId } });
+    const agent = new QueryAgent<Device>(Device, {
+      where: { id: deviceId as UUID },
+    });
     const device = await agent.findOneById(deviceId);
     if (!device) {
       throw new NotAcceptableError("Device not found");
     }
 
-    const deviceSensors = await Sensor.findOne({
+    const deviceSensor = await Sensor.findOne({
       where: { identity },
     });
 
-    if (!deviceSensors) {
+    if (!deviceSensor) {
       throw new NotAcceptableError("Sensor not found on device");
     }
-    const sRules = new SensorTypeRules(deviceSensors.type, device);
-    const key = await sRules.build(deviceSensors.identity);
+    const sRules = new SensorTypeRules(deviceSensor.sensorType, device);
+    const key = await sRules.build(deviceSensor.identity);
     const newDeviceSensor = DeviceSensor.create({
       device: device.id,
-      sensor: deviceSensors.id,
+      sensor: deviceSensor.id,
       key,
     });
     const sensor = await newDeviceSensor.save();
@@ -166,7 +327,9 @@ export class Device extends EllipsiesBaseModelUUID {
   }
 
   public static async syncSensorWithDevice(deviceId: string, user?: UUID) {
-    const agent = new QueryAgent<Device>(Device, { where: { id: deviceId } });
+    const agent = new QueryAgent<Device>(Device, {
+      where: { id: deviceId as UUID },
+    });
     const device = await agent.findOneById(deviceId);
     if (!device) {
       throw new NotAcceptableError("Device not found");
@@ -182,7 +345,9 @@ export class Device extends EllipsiesBaseModelUUID {
     sensorKey: string,
     user?: UUID,
   ) {
-    const agent = new QueryAgent<Device>(Device, { where: { id: deviceId } });
+    const agent = new QueryAgent<Device>(Device, {
+      where: { id: deviceId as UUID },
+    });
     const device = await agent.findOneById(deviceId);
     if (!device) {
       throw new NotAcceptableError("Device not found");
@@ -196,8 +361,12 @@ export class Device extends EllipsiesBaseModelUUID {
       throw new NotAcceptableError("Sensor not found on device");
     }
 
+    const sensorRecord = await Sensor.findOne({
+      where: { id: sensorToRemove.sensor as UUID },
+    });
+
     await sensorToRemove.remove();
-    const sRules = new SensorTypeRules(deviceSensors.type, device);
+    const sRules = new SensorTypeRules(sensorRecord.sensorType, device);
     await sRules.sendRemoveToChannel(sensorToRemove.key, device, user);
 
     return { device, sensor: sensorToRemove };
@@ -232,7 +401,7 @@ export class Device extends EllipsiesBaseModelUUID {
     const { ca, key, cert } = record;
 
     const deviceProfile = await DeviceProfile.findOne({
-      where: { id: device.profile },
+      where: { id: device.profile as UUID },
     });
 
     if (!deviceProfile || !deviceProfile.repository) {
@@ -254,9 +423,13 @@ export class Device extends EllipsiesBaseModelUUID {
         config: Object.assign({}, deviceProfile.defConfigSchema, config || {}),
       },
     );
-    const buildPayload = {
+    const sendProfile = await DeviceProfile.create({
+      ...deviceProfile,
+      script: interpolatedScript as string,
+    });
+    const buildPayload: BuildPayload = {
       device,
-      profile: { ...deviceProfile, script: interpolatedScript },
+      profile: sendProfile,
       repository: sourceRepo,
       certificates: {
         // specific filenames expected by Hyphen Connect firmware
@@ -275,17 +448,15 @@ export class Device extends EllipsiesBaseModelUUID {
 
   public static async buildCertificateForDevice(
     search: Partial<Device>,
-  ): Promise<Device> {
+  ): Promise<Device[]> {
     const agent = new QueryAgent<Device>(Device, { where: search });
-    const devices = await agent.getObjects();
+    const devices = (await agent.getObjects()) as Device[];
     if (!devices || devices.length === 0) {
       throw new Error("Device not found");
     }
     for (const device of devices) {
-      await AwsCertificateManager.instance.terminateCertificate(
-        device.identity,
-      );
-      await AwsCertificateManager.instance.provisionDeviceCertificate(device);
+      await CertificateManager.instance.terminateCertificate(device.identity);
+      await CertificateManager.instance.provisionDeviceCertificate(device);
       await RedisCache.set(this.deviceCacheId(device.identity), device, 86400); // Cache for 24 hours
     }
     return devices;
@@ -293,7 +464,7 @@ export class Device extends EllipsiesBaseModelUUID {
 
   public static async destroyDevice(device: Device): Promise<void> {
     try {
-      await AwsCertificateManager.instance.terminateDevice(device);
+      await CertificateManager.instance.terminateDevice(device);
       console.log(
         `✅ Destroyed AWS IoT certificate for device ${device.identity}`,
       );
@@ -305,15 +476,15 @@ export class Device extends EllipsiesBaseModelUUID {
     }
   }
 
-  public static async create(data: Partial<Device>): Promise<Device> {
+  public static async createDevice(data: Partial<Device>): Promise<Device> {
     const agent = new QueryAgent<Device>(Device, {});
-    const device = await agent.create<Device>(data);
+    const device = (await agent.create(data)) as Device;
     if (!device) {
       throw new Error("Error creating device");
     }
     await RedisCache.set(this.deviceCacheId(device.identity), device, 86400); // Cache for 24 hours
     try {
-      await AwsCertificateManager.instance.provisionDeviceCertificate(device);
+      await CertificateManager.instance.provisionDeviceCertificate(device);
       console.log(
         `✅ Created new AWS IoT certificate for device ${device.identity}`,
       );

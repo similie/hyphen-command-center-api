@@ -6,9 +6,11 @@ import {
   ExpressRequest,
   BadRequestError,
   ControllerFunctionNames,
-  IModelUpdateValues,
   UseBefore,
+  FindOptionsWhere,
+  IModelUpdateValues,
 } from "@similie/ellipsies";
+
 import { ParameterValue } from "src/models";
 
 @EllipsiesExtends("parameters")
@@ -38,7 +40,9 @@ export default class ParameterValueController extends EllipsiesController<Parame
   })
   public override async create(@Body() value: Partial<ParameterValue>) {
     try {
-      const record = await ParameterValue.createValue(value);
+      const record = (await ParameterValue.createValue(
+        value,
+      )) as ParameterValue;
       return record.toJSON();
     } catch (error) {
       console.error("Error creating Parameter Value:", error);
@@ -46,9 +50,11 @@ export default class ParameterValueController extends EllipsiesController<Parame
     }
   }
 
-  public override async destroy(@Body() value: Partial<ParameterValue>) {
+  public override async destroy(
+    @Body() value: FindOptionsWhere<ParameterValue>,
+  ) {
     try {
-      const record = await super.destroy(value);
+      const record = (await super.destroy(value)) as ParameterValue;
       return record.toJSON();
     } catch (error) {
       throw new BadRequestError("Message and topic are required");
@@ -59,7 +65,10 @@ export default class ParameterValueController extends EllipsiesController<Parame
     @Body() value: IModelUpdateValues<ParameterValue>,
   ) {
     try {
-      const record = await super.update(value);
+      const record = (await super.update(value)) as ParameterValue;
+      if (!record) {
+        throw new Error("Parameter Value not found for update");
+      }
       return record.toJSON();
     } catch (error) {
       throw new BadRequestError("Message and topic are required");
