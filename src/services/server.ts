@@ -36,7 +36,7 @@ export const startServer = async () => {
   );
 
   console.log(
-    `🚀 CommandCenter API running on http://localhost:${servicePort}/${routePrefix}`,
+    `🚀 CommandCenter API running on http://localhost:${servicePort}${routePrefix}`,
   );
 
   await ellipsies.start();

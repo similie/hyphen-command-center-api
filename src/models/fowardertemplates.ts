@@ -63,23 +63,15 @@ export default class ForwarderTemplate extends EllipsiesBaseModelUUID {
             type: ForwarderTargetKind.HTTP,
             name: "Parabl Ingest Endpoint",
             method: "POST",
-            url: "https://my.parabl.io/api/v1/devices/",
+            urlTemplate: "https://my.parabl.io/api/v1/delivery",
             headers: [
               {
-                kind: "http",
-                method: "POST",
-                headers: [
-                  {
-                    key: "authentication",
-                    value: "",
-                    derived: true,
-                    required: false,
-                  },
-                  { key: "secret", value: "", derived: true, required: false },
-                ],
-                urlTemplate: "http://localhost:1337/api/v1/devices/delivery", // if Parabl is self-hosted
-                bodyTemplate: [],
+                key: "authentication",
+                value: "",
+                derived: true,
+                required: false,
               },
+              { key: "secret", value: "", derived: true, required: false },
             ],
           },
         ],

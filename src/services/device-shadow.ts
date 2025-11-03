@@ -165,8 +165,8 @@ export class DeviceShadowManager {
 
   private async pullDevice(message: string, topic: string) {
     try {
-      const payload = JSON.parse(message);
-      const { device, id, date } = payload;
+      const content = JSON.parse(message);
+      const { device, id, date, stale = false } = content;
       const foundId = this.attemptToParseIdFromTopic(topic);
       if (!device && !id && !foundId) {
         return null;
@@ -177,7 +177,9 @@ export class DeviceShadowManager {
       // our devices are cached, so we need to update the lastTouched field
       if (foundDevice) {
         foundDevice.lastTouched =
-          date && typeof date === "string" ? new Date(date) : new Date();
+          !stale && date && typeof date === "string"
+            ? new Date(date)
+            : new Date();
       }
 
       return foundDevice;
