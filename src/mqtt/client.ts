@@ -49,15 +49,20 @@ export class MqttClientManager {
 
       try {
         await this.elector.shutdown(); // ensure clean slate
-        await this.elector.init(process.env.REDIS_CONFIG_URL!);
       } catch (err) {
         console.error("⚠️ Error restarting leader elector:", err);
       }
 
-      // Always (re)bind listeners to the *current* elector emitter
-      // since it may have been recreated by init()
-      this.elector.removeAllListeners("elected");
-      this.elector.removeAllListeners("revoked");
+      try {
+        // Always (re)bind listeners to the *current* elector emitter
+        // since it may have been recreated by init()
+        this.elector.removeAllListeners("elected");
+        this.elector.removeAllListeners("revoked");
+        await this.elector.init(process.env.REDIS_CONFIG_URL!);
+      } catch (err) {
+        console.error("⚠️ Error initializing leader elector:", err);
+      }
+
       /**
        * 👑 Leader election won
        * In a multi-instance setup, only the leader should subscribe to MQTT topics

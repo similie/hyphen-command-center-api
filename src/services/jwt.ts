@@ -22,6 +22,7 @@ export const decodeToken = (token: string) => {
 export const verifyTokenValidity = (
   req: {
     headers: { authentication?: string };
+    user?: any;
   },
   res: ExpressResponse,
 ) => {
@@ -34,6 +35,7 @@ export const verifyTokenValidity = (
   const valid = Date.now() < exp * 1000;
   if (valid) {
     res.locals.user = decoded;
+    req.user = decoded && decoded.user ? decoded.user : undefined;
   }
 
   return valid;

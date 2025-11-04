@@ -17,7 +17,7 @@ import {
 } from "@similie/ellipsies";
 import { Device, DeviceProfile } from "../models/device";
 import { UUID } from "src/utils/tools";
-import { SourceRepository } from "src/models";
+import { DeviceConfig, SourceRepository } from "src/models";
 import fs from "fs";
 import os from "os";
 import path from "path";
@@ -93,6 +93,36 @@ export class DeviceController extends EllipsiesController<Device> {
   ): Promise<{ device: Device; sensors: Sensor[] }> {
     return Device.getSensorsForDevice(deviceId);
   }
+
+  @Get("/ota/:deviceId/:buildId")
+  public async getDevicesForOtaUpdate(
+    @Param("deviceId") deviceId: string,
+    @Param("buildId") buildId: string,
+    @Res() res: ExpressResponse,
+  ): Promise<ExpressResponse> {
+    console.log(
+      `Getting OTA update for device ${deviceId} and build ${buildId}`,
+    );
+    return Device.getDevicesForOtaUpdate(deviceId, buildId, res);
+  }
+
+  @Post("/ota")
+  public async createOtaUpdate(
+    @Body() body: { deviceId: string; buildId: string; host: string },
+    @Req() req: ExpressRequest,
+  ): Promise<DeviceConfig> {
+    console.log("Creating OTA Update for device:", body, req.user);
+    return await Device.generateDeviceOTAConfig(body, req.user);
+  }
+
+  // @Post("/ota")
+  // public async triggerOtaUpdate(
+  //   @Body() body: { deviceIds: string[] },
+  //   @Res() res: ExpressResponse,
+  // ): Promise<ExpressResponse> {
+  //   // return Device.triggerOtaUpdate(body.deviceIds, res.locals.user?.uid);
+  //   return res;
+  // }
 
   @Post("/sensor")
   public async addSensorToDevice(

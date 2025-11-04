@@ -15,6 +15,7 @@ import {
 import {
   CertificateManager,
   PlatformIOBuilder,
+  signToken,
   SimilieQuery,
 } from "src/services";
 import { RedisCache } from "src/services/redis";
@@ -23,10 +24,21 @@ import IdentityCertificates from "./certificate";
 import SourceRepository from "./repository";
 import { DeviceSensor, Sensor } from "./sensor";
 import { SensorTypeRules } from "src/services/sensor";
-import { BuildPayload, DeviceContentItems, SensorType } from "./types";
-import { Heartbeat } from ".";
+import {
+  BuildPayload,
+  DeviceConfigActionType,
+  DeviceConfigEnum,
+  DeviceContentItems,
+  SensorType,
+} from "./types";
+import { DeviceConfig, Heartbeat } from ".";
 import DeviceStreams from "./devicestream";
-
+import unzipper from "unzipper";
+import fs from "fs";
+import os from "os";
+import path from "path";
+import { pipeline } from "stream/promises";
+import { Writable } from "stream";
 @Entity("device_profile", { schema: "public" })
 export class DeviceProfile extends EllipsiesBaseModelUUID {
   @Column("varchar", {
@@ -291,6 +303,148 @@ export class Device extends EllipsiesBaseModelUUID {
     }
     const sensors = await DeviceSensor.queryForDevice(device);
     return { device, sensors };
+  }
+
+  public static async generateDeviceOTAConfig(
+    body: { deviceId: string; buildId: string; host: string },
+    user: any,
+  ) {
+    const url = new URL(body.host);
+    const payload = {
+      port: +url.port || 443,
+      host: url.hostname,
+      url: url.pathname + `devices/ota/${body.deviceId}/${body.buildId}`,
+      token: signToken(user),
+    };
+    console.log("OTA Payload:", payload);
+    const deviceConfig = await DeviceConfig.createConfig({
+      identity: body.deviceId,
+      user: user.uid,
+      state: DeviceConfigEnum.WAITING,
+      actionName: "otaUpdate",
+      actionType: DeviceConfigActionType.FUNCTION,
+      noNullify: true,
+      data: JSON.stringify(payload),
+    });
+    return deviceConfig as DeviceConfig;
+  }
+
+  public static async getDevicesForOtaUpdate(
+    deviceId: string,
+    buildId: string,
+    res: ExpressResponse,
+  ) {
+    const hostBuildRoot =
+      process.env.HOST_BUILDS_PATH || path.join(os.tmpdir(), "similie-builds");
+    console.log("Body Parameters:", { deviceId, buildId });
+    const zipPath = path.join(hostBuildRoot, buildId, `${deviceId}.zip`);
+
+    console.log(`🔍 Looking for OTA build artifact at ${zipPath}...`);
+    if (!fs.existsSync(zipPath)) {
+      throw new NotAcceptableError("OTA build artifact not found");
+    }
+
+    // Create a read stream from the zip file
+    const zipStream = fs.createReadStream(zipPath);
+
+    // Find and extract the firmware.bin file on the fly
+    const directory = zipStream.pipe(unzipper.Parse({ forceStream: true }));
+
+    let fileFound = false;
+
+    for await (const entry of directory) {
+      const fileName = entry.path;
+      console.log(`🔍 Found OTA build artifact: ${fileName}`);
+      if (fileName.endsWith("firmware.bin")) {
+        fileFound = true;
+        const contentLength = entry.vars.uncompressedSize || 0;
+        console.log(
+          `📦 Streaming OTA firmware for ${deviceId} (${contentLength} bytes)...`,
+        );
+        // Set headers for OTA binary stream
+        res.setHeader("Content-Type", "application/octet-stream");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="firmware.bin"`,
+        );
+        res.setHeader("Content-Length", contentLength.toString());
+        res.setHeader("Connection", "close");
+
+        console.log(`📦 Streaming OTA firmware for ${deviceId}...`);
+
+        const CHUNK_SIZE = 64 * 1024; // 64 KB
+        const DELAY_MS = 25; // 25 ms pause between chunks (adjust as needed)
+
+        // Create a writable stream wrapper for res so we can await drain
+        const writable: Writable = new Writable({
+          write(chunk, encoding, callback) {
+            const ok = res.write(chunk, encoding);
+            if (!ok) {
+              res.once("drain", () => callback());
+            } else {
+              callback();
+            }
+          },
+          final(callback) {
+            res.end();
+            callback();
+          },
+        });
+
+        // Read from entry in chunks and write to writable
+        let totalWritten = 0;
+        for await (const chunk of entry) {
+          // Optionally slice chunk if very large
+          let offset = 0;
+          while (offset < (chunk as Buffer).length) {
+            const sliceLen = Math.min(
+              CHUNK_SIZE,
+              (chunk as Buffer).length - offset,
+            );
+            const slice = (chunk as Buffer).slice(offset, offset + sliceLen);
+            writable.write(slice);
+            totalWritten += sliceLen;
+            offset += sliceLen;
+            if (totalWritten % (512 * 1024) === 0) {
+              console.log(`… ${totalWritten}/${contentLength} bytes`);
+            }
+            await new Promise((r) => setTimeout(r, DELAY_MS));
+          }
+        }
+        await new Promise<void>((r, rej) => {
+          writable.end(() => r());
+          writable.on("error", rej);
+        });
+
+        // Stream the binary directly to the response
+        // await new Promise<void>((resolve, reject) => {
+        //   entry.pipe(res);
+        //   entry.on("end", resolve);
+        //   entry.on("error", reject);
+        // });
+        // Use pipeline to respect back-pressure
+        // pipeline(entry, res);
+        // return pipeline(entry, res);
+        console.log(`✅ Firmware stream complete for ${deviceId}`);
+        break;
+      } else {
+        entry.autodrain();
+      }
+    }
+
+    if (!fileFound) {
+      console.error(`❌ firmware.bin not found in ${zipPath}`);
+      res.status(404).json({ error: "Firmware not found in artifact" });
+    }
+
+    // Optionally cleanup (only if safe and ephemeral)
+    try {
+      // fs.unlinkSync(zipPath);
+    } catch (e) {
+      console.warn(`⚠️ Could not delete build artifact: ${e}`);
+    }
+
+    return res;
   }
 
   public static async addSensorToDevice(

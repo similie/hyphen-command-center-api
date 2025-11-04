@@ -3,7 +3,7 @@ import logging
 import shutil
 import re
 from fastapi import FastAPI, Request
-import subprocess, tempfile, os, zipfile, asyncio, stat, textwrap
+import subprocess, requests, os, zipfile, asyncio, stat, textwrap
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)   # ensure your logger will log at DEBUG level
 handler = logging.StreamHandler()
@@ -12,6 +12,16 @@ handler = logging.StreamHandler()
 # handler.setFormatter(formatter)
 logger.addHandler(handler)
 app = FastAPI()
+
+
+def insert_isrgroot_ca():
+    # scripts/pull_certs.py
+
+    os.makedirs("src/certs", exist_ok=True)
+    pem_url = "https://letsencrypt.org/certs/isrgrootx1.pem"
+    r = requests.get(pem_url)
+    with open("src/certs/isrgrootx1.pem", "wb") as f:
+        f.write(r.content)
 
 
 def extract_build_path(script: str) -> str:
@@ -96,6 +106,8 @@ async def build(request: Request):
         with open(filepath, "w", encoding="utf-8", newline="\n") as f:
             f.write(content)
         logger.info(f"✅ Wrote certificate: {filepath} ({len(content)} bytes)")
+        
+    insert_isrgroot_ca()
 
     # Write certificates with verification
     for name, content in certs.items():

@@ -38,10 +38,12 @@ export class DeviceShadowManager {
     "process-device-config-stream";
   private readonly QUEUE_CONFIG_PROCESS = "processed-pending-config";
   private readonly QUEUE_DEVICE_SENSOR = "processed-device-sensor";
+  private readonly OTA_TOPIC_PREFIX = "ota-ack-queue";
   private readonly _queue: jQueue;
   private readonly _queueConfig: jQueue;
   private readonly _configQueue: jQueue;
   private readonly _sensorQueue: jQueue;
+  private readonly _ackQueue: jQueue;
   private static _forwardQueue: jQueue;
   private static _forwardQueueArtifacts: jQueue;
   private constructor() {
@@ -54,6 +56,7 @@ export class DeviceShadowManager {
     this._queue = QueueManager.get.queue(this.QUEUE_CONNECTION_MESSAGE);
     this._configQueue = QueueManager.get.queue(this.QUEUE_CONFIG_PROCESS);
     this._sensorQueue = QueueManager.get.queue(this.QUEUE_DEVICE_SENSOR);
+    this._ackQueue = QueueManager.get.queue(this.OTA_TOPIC_PREFIX);
     this._queueConfig = QueueManager.get.queue(
       this.QUEUE_CONNECTION_MESSAGE_CONFIG,
       QueueManager.get.delaySecondsOpt(5),
@@ -95,6 +98,10 @@ export class DeviceShadowManager {
 
   private isMaintenanceTopic(topic: string) {
     return topic.includes(`/Post/Maintain`);
+  }
+
+  private isOtaTopic(deviceId: string, topic: string) {
+    return topic.includes(`/Config/OTA/ack/${deviceId}`);
   }
 
   private isDeliveryTopic(topic: string) {
@@ -283,6 +290,13 @@ export class DeviceShadowManager {
     // Implement the logic to check to respond to maintenance requests
   }
 
+  private async processOtaUpdate(
+    message: Buffer<ArrayBufferLike>,
+    device: Device,
+  ) {
+    this._ackQueue.add(this.OTA_TOPIC_PREFIX, { message, device });
+  }
+
   private async createRegistrationEntry(message: Buffer<ArrayBufferLike>) {
     try {
       const msgStr = message.toString();
@@ -346,6 +360,9 @@ export class DeviceShadowManager {
       // Handle heartbeat topic
       console.log(`Device ${device.identity} heartbeat received.`);
       await this.saveHeartbeat(message);
+    } else if (this.isOtaTopic(device.identity, topic)) {
+      console.log(`Device ${device.identity} OTA update received.`);
+      await this.processOtaUpdate(message, device);
     } else if (this.isConfigTopic(topic)) {
       // Handle config topic
       console.log(`Device ${device.identity} config received.`);
