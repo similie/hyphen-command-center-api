@@ -290,7 +290,7 @@ export class DeviceShadowManager {
     // Implement the logic to check to respond to maintenance requests
   }
 
-  private async processOtaUpdate(
+  public async processOtaUpdate(
     message: Buffer<ArrayBufferLike>,
     device: Device,
   ) {

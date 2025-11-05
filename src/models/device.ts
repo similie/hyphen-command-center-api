@@ -15,6 +15,7 @@ import {
 import {
   CertificateManager,
   createSignedPayload,
+  DeviceShadowManager,
   generateNonceAndTimestamp,
   PlatformIOBuilder,
   signToken,
@@ -357,7 +358,19 @@ export class Device extends EllipsiesBaseModelUUID {
     // Find and extract the firmware.bin file on the fly
     const directory = zipStream.pipe(unzipper.Parse({ forceStream: true }));
 
+    const device = await Device.findOne({
+      where: { id: deviceId as UUID },
+    });
+    if (!device) {
+      throw new NotAcceptableError("Device not found");
+    }
+
     let fileFound = false;
+
+    DeviceShadowManager.get.processOtaUpdate(
+      Buffer.from(JSON.stringify({ status: "progress", process: 0 })),
+      device,
+    );
 
     for await (const entry of directory) {
       const fileName = entry.path;
@@ -394,6 +407,10 @@ export class Device extends EllipsiesBaseModelUUID {
           },
           final(callback) {
             res.end();
+            DeviceShadowManager.get.processOtaUpdate(
+              Buffer.from(JSON.stringify({ status: "downloaded" })),
+              device,
+            );
             callback();
           },
         });
@@ -414,6 +431,15 @@ export class Device extends EllipsiesBaseModelUUID {
             offset += sliceLen;
             if (totalWritten % (512 * 1024) === 0) {
               console.log(`… ${totalWritten}/${contentLength} bytes`);
+              DeviceShadowManager.get.processOtaUpdate(
+                Buffer.from(
+                  JSON.stringify({
+                    status: "progress",
+                    progress: (totalWritten / contentLength) * 100,
+                  }),
+                ),
+                device,
+              );
             }
             await new Promise((r) => setTimeout(r, DELAY_MS));
           }
@@ -446,7 +472,7 @@ export class Device extends EllipsiesBaseModelUUID {
 
     // Optionally cleanup (only if safe and ephemeral)
     try {
-      // fs.unlinkSync(zipPath);
+      fs.unlinkSync(zipPath);
     } catch (e) {
       console.warn(`⚠️ Could not delete build artifact: ${e}`);
     }
