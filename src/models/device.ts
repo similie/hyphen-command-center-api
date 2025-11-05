@@ -337,6 +337,23 @@ export class Device extends EllipsiesBaseModelUUID {
     return deviceConfig as DeviceConfig;
   }
 
+  private static sendOtaProgressUpdate(contentLength: number, device: Device) {
+    return (totalWritten: number) => {
+      if (contentLength === 0) {
+        return;
+      }
+      DeviceShadowManager.get.processOtaUpdate(
+        Buffer.from(
+          JSON.stringify({
+            status: "progress",
+            progress: (totalWritten * 100) / contentLength,
+          }),
+        ),
+        device,
+      );
+    };
+  }
+
   public static async getDevicesForOtaUpdate(
     deviceId: string,
     buildId: string,
@@ -394,7 +411,7 @@ export class Device extends EllipsiesBaseModelUUID {
 
         const CHUNK_SIZE = 64 * 1024; // 64 KB
         const DELAY_MS = 25; // 25 ms pause between chunks (adjust as needed)
-
+        const otaUpdate = this.sendOtaProgressUpdate(contentLength, device);
         // Create a writable stream wrapper for res so we can await drain
         const writable: Writable = new Writable({
           write(chunk, encoding, callback) {
@@ -407,10 +424,6 @@ export class Device extends EllipsiesBaseModelUUID {
           },
           final(callback) {
             res.end();
-            DeviceShadowManager.get.processOtaUpdate(
-              Buffer.from(JSON.stringify({ status: "downloaded" })),
-              device,
-            );
             callback();
           },
         });
@@ -431,15 +444,7 @@ export class Device extends EllipsiesBaseModelUUID {
             offset += sliceLen;
             if (totalWritten % (512 * 1024) === 0) {
               console.log(`… ${totalWritten}/${contentLength} bytes`);
-              DeviceShadowManager.get.processOtaUpdate(
-                Buffer.from(
-                  JSON.stringify({
-                    status: "progress",
-                    progress: (totalWritten / contentLength) * 100,
-                  }),
-                ),
-                device,
-              );
+              otaUpdate(totalWritten);
             }
             await new Promise((r) => setTimeout(r, DELAY_MS));
           }
