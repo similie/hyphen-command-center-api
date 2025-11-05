@@ -15,7 +15,7 @@ import {
 import {
   CertificateManager,
   createSignedPayload,
-  DeviceShadowManager,
+  // DeviceShadowManager,
   generateNonceAndTimestamp,
   PlatformIOBuilder,
   signToken,
@@ -337,23 +337,23 @@ export class Device extends EllipsiesBaseModelUUID {
     return deviceConfig as DeviceConfig;
   }
 
-  private static sendOtaProgressUpdate(contentLength: number, device: Device) {
-    return (totalWritten: number) => {
-      if (contentLength === 0) {
-        return;
-      }
-      DeviceShadowManager.get.processOtaUpdate(
-        Buffer.from(
-          JSON.stringify({
-            status: "progress",
-            progress: (totalWritten * 100) / contentLength,
-          }),
-          "utf8",
-        ),
-        device,
-      );
-    };
-  }
+  // private static sendOtaProgressUpdate(contentLength: number, device: Device) {
+  //   return (totalWritten: number) => {
+  //     if (contentLength === 0) {
+  //       return;
+  //     }
+  //     DeviceShadowManager.get.processOtaUpdate(
+  //       Buffer.from(
+  //         JSON.stringify({
+  //           status: "progress",
+  //           progress: (totalWritten * 100) / contentLength,
+  //         }),
+  //         "utf8",
+  //       ),
+  //       device,
+  //     );
+  //   };
+  // }
 
   public static async getDevicesForOtaUpdate(
     deviceId: string,
@@ -385,10 +385,10 @@ export class Device extends EllipsiesBaseModelUUID {
 
     let fileFound = false;
 
-    DeviceShadowManager.get.processOtaUpdate(
-      Buffer.from(JSON.stringify({ status: "progress", process: 0 })),
-      device,
-    );
+    // DeviceShadowManager.get.processOtaUpdate(
+    //   Buffer.from(JSON.stringify({ status: "progress", process: 0 })),
+    //   device,
+    // );
 
     for await (const entry of directory) {
       const fileName = entry.path;
@@ -412,7 +412,7 @@ export class Device extends EllipsiesBaseModelUUID {
 
         const CHUNK_SIZE = 64 * 1024; // 64 KB
         const DELAY_MS = 25; // 25 ms pause between chunks (adjust as needed)
-        const otaUpdate = this.sendOtaProgressUpdate(contentLength, device);
+        // const otaUpdate = this.sendOtaProgressUpdate(contentLength, device);
         // Create a writable stream wrapper for res so we can await drain
         const writable: Writable = new Writable({
           write(chunk, encoding, callback) {
@@ -445,7 +445,7 @@ export class Device extends EllipsiesBaseModelUUID {
             offset += sliceLen;
             if (totalWritten % (512 * 1024) === 0) {
               console.log(`… ${totalWritten}/${contentLength} bytes`);
-              otaUpdate(totalWritten);
+              // otaUpdate(totalWritten);
             }
             await new Promise((r) => setTimeout(r, DELAY_MS));
           }
