@@ -13,15 +13,24 @@ handler = logging.StreamHandler()
 logger.addHandler(handler)
 app = FastAPI()
 
-
 def insert_isrgroot_ca():
-    # scripts/pull_certs.py
-
     os.makedirs("src/certs", exist_ok=True)
     pem_url = "https://letsencrypt.org/certs/isrgrootx1.pem"
-    r = requests.get(pem_url)
-    with open("src/certs/isrgrootx1.pem", "wb") as f:
-        f.write(r.content)
+    max_retries = 3
+    for attempt in range(1, max_retries+1):
+        try:
+            r = requests.get(pem_url, timeout=10)
+            r.raise_for_status()
+            with open("src/certs/isrgrootx1.pem", "wb") as f:
+                f.write(r.content)
+            print(f"Downloaded ISRG Root X1 certificate (status {r.status_code})")
+            return
+        except Exception as exc:
+            print(f"Attempt {attempt} failed: {exc}")
+            if attempt < max_retries:
+                sleep(2)
+            else:
+                raise
 
 
 def extract_build_path(script: str) -> str:
@@ -110,17 +119,17 @@ async def build(request: Request):
     insert_isrgroot_ca()
 
     # Write certificates with verification
-    for name, content in certs.items():
-        filepath = os.path.join("data", name)
-        with open(filepath, "w", encoding="utf-8", newline="\n") as f:
-            f.write(content)
+    # for name, content in certs.items():
+    #     filepath = os.path.join("data", name)
+    #     with open(filepath, "w", encoding="utf-8", newline="\n") as f:
+    #         f.write(content)
         
-        # VERIFY!
-        size = os.path.getsize(filepath)
-        logger.info(f"✅ {name}: {size} bytes")
+    #     # VERIFY!
+    #     size = os.path.getsize(filepath)
+    #     logger.info(f"✅ {name}: {size} bytes")
         
-        if size == 0:
-            raise Exception(f"File is empty: {name}")
+    #     if size == 0:
+    #         raise Exception(f"File is empty: {name}")
 
     # 4️⃣ Run build
     proc = await asyncio.create_subprocess_shell(

@@ -14,6 +14,8 @@ import {
 } from "@similie/ellipsies";
 import {
   CertificateManager,
+  createSignedPayload,
+  generateNonceAndTimestamp,
   PlatformIOBuilder,
   signToken,
   SimilieQuery,
@@ -37,7 +39,7 @@ import unzipper from "unzipper";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { pipeline } from "stream/promises";
+
 import { Writable } from "stream";
 @Entity("device_profile", { schema: "public" })
 export class DeviceProfile extends EllipsiesBaseModelUUID {
@@ -310,13 +312,18 @@ export class Device extends EllipsiesBaseModelUUID {
     user: any,
   ) {
     const url = new URL(body.host);
+    const { nonce, timestamp } = generateNonceAndTimestamp();
     const payload = {
       port: +url.port || 443,
       host: url.hostname,
       url: url.pathname + `devices/ota/${body.deviceId}/${body.buildId}`,
-      token: signToken(user),
+      token: signToken({ uid: user.uid, name: user.name }, "15m"),
+      build: body.buildId,
+      device: body.deviceId,
+      nonce,
+      timestamp,
     };
-    console.log("OTA Payload:", payload);
+    const signed = await createSignedPayload(payload, body.deviceId);
     const deviceConfig = await DeviceConfig.createConfig({
       identity: body.deviceId,
       user: user.uid,
@@ -324,7 +331,7 @@ export class Device extends EllipsiesBaseModelUUID {
       actionName: "otaUpdate",
       actionType: DeviceConfigActionType.FUNCTION,
       noNullify: true,
-      data: JSON.stringify(payload),
+      data: JSON.stringify(signed),
     });
     return deviceConfig as DeviceConfig;
   }

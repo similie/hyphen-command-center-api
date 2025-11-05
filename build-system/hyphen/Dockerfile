@@ -41,6 +41,9 @@ RUN HOST_ARCH=$(uname -m) && \
 
 COPY server.py .
 EXPOSE 8080
+
+RUN update-ca-certificates
+
 # CMD ["uvicorn","server:app","--host","0.0.0.0","--port","8080"]
 CMD ["python", "server.py"]
 # FROM python:3.11-slim

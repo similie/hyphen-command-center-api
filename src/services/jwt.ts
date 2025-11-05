@@ -1,9 +1,9 @@
 import jwt from "jsonwebtoken";
 import { type ExpressResponse } from "@similie/ellipsies";
 
-export const signToken = (payload: object) => {
+export const signToken = (payload: object, expiresIn: string = "1h") => {
   const JWT_SECRET = process.env.JWT_CLIENT_SECRET || "your_jwt_secret";
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "1h" });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn });
 };
 
 export const verifyToken = (token: string) => {
