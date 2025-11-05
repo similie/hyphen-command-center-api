@@ -134,7 +134,7 @@ async def build(request: Request):
             f.write(content)
         logger.info(f"✅ Wrote certificate: {filepath} ({len(content)} bytes)")
         
-    insert_isrgroot_ca()
+    insert_ca_chain()
 
     # Write certificates with verification
     # for name, content in certs.items():
