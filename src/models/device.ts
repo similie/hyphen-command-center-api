@@ -359,7 +359,7 @@ export class Device extends EllipsiesBaseModelUUID {
     const directory = zipStream.pipe(unzipper.Parse({ forceStream: true }));
 
     const device = await Device.findOne({
-      where: { id: deviceId as UUID },
+      where: { identity: deviceId },
     });
     if (!device) {
       throw new NotAcceptableError("Device not found");
