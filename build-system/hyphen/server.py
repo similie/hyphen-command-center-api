@@ -7,30 +7,48 @@ import subprocess, requests, os, zipfile, asyncio, stat, textwrap
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)   # ensure your logger will log at DEBUG level
 handler = logging.StreamHandler()
+from time import sleep
 # handler.setLevel(logging.DEBUG)   # handler must also allow DEBUG
 # formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(name)s | %(message)s')
 # handler.setFormatter(formatter)
 logger.addHandler(handler)
 app = FastAPI()
 
-def insert_isrgroot_ca():
+def insert_ca_chain():
     os.makedirs("src/certs", exist_ok=True)
-    pem_url = "https://letsencrypt.org/certs/isrgrootx1.pem"
-    max_retries = 3
-    for attempt in range(1, max_retries+1):
-        try:
-            r = requests.get(pem_url, timeout=10)
-            r.raise_for_status()
-            with open("src/certs/isrgrootx1.pem", "wb") as f:
-                f.write(r.content)
-            print(f"Downloaded ISRG Root X1 certificate (status {r.status_code})")
-            return
-        except Exception as exc:
-            print(f"Attempt {attempt} failed: {exc}")
-            if attempt < max_retries:
-                sleep(2)
-            else:
-                raise
+
+    intermediate_url = "https://letsencrypt.org/certs/lets-encrypt-r3.pem"
+    root_url = "https://letsencrypt.org/certs/isrgrootx1.pem"
+
+    def download(url):
+        max_retries = 3
+        for attempt in range(1, max_retries+1):
+            try:
+                r = requests.get(url, timeout=10)
+                r.raise_for_status()
+                return r.content
+            except Exception as exc:
+                print(f"[CA Download] Attempt {attempt} failed for {url}: {exc}")
+                if attempt < max_retries:
+                    sleep(2)
+                else:
+                    raise
+
+    print("📡 Downloading R3 intermediate cert...")
+    r3 = download(intermediate_url)
+
+    print("📡 Downloading ISRG Root X1 cert...")
+    root = download(root_url)
+
+    chain_path = "src/certs/isrgrootx1.pem"
+    print(f"📝 Writing chain to {chain_path}")
+
+    # MUST BE: R3 FIRST, ROOT SECOND
+    with open(chain_path, "wb") as f:
+        f.write(r3.strip() + b"\n")
+        f.write(root.strip() + b"\n")
+
+    print("✅ CA chain updated successfully.")
 
 
 def extract_build_path(script: str) -> str:

@@ -330,7 +330,7 @@ export class DeviceShadowManager {
       if (!messageValue.payload) {
         return;
       }
-
+      await DeviceSensor.delete({ device: device.id });
       const sensors: DeviceSensor[] = [];
       for (const [_key, value] of Object.entries(messageValue.payload)) {
         const ds = await DeviceSensor.applyDeviceSync(value, device);
