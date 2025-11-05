@@ -348,6 +348,7 @@ export class Device extends EllipsiesBaseModelUUID {
             status: "progress",
             progress: (totalWritten * 100) / contentLength,
           }),
+          "utf8",
         ),
         device,
       );

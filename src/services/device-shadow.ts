@@ -294,6 +294,11 @@ export class DeviceShadowManager {
     message: Buffer<ArrayBufferLike>,
     device: Device,
   ) {
+    console.log(
+      "Processing OTA update for device:",
+      message.toString(),
+      device.identity,
+    );
     this._ackQueue.add(this.OTA_TOPIC_PREFIX, { message, device });
   }
 
