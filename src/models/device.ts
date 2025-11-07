@@ -563,6 +563,7 @@ export class Device extends EllipsiesBaseModelUUID {
       if (expectedType !== "string" && expectedType !== "text") continue;
 
       let value = correctedConfig[key];
+      console.log("Processing config key:", key, "with value:", value);
       if (!value) {
         continue;
       }
@@ -628,17 +629,17 @@ export class Device extends EllipsiesBaseModelUUID {
     if (!sourceRepo) {
       throw new NotAcceptableError("No source repository found");
     }
-    console.log(
-      "Validating corrected config for PIO",
-      this.correctConfigForPIO(config, deviceProfile),
-    );
+
+    const updatedConfig = this.correctConfigForPIO(config, deviceProfile);
+    console.log("Validating corrected config for PIO", updatedConfig);
     const interpolatedScript = SimilieQuery.interpolate(
       deviceProfile.script || "",
       {
         device,
-        config: this.correctConfigForPIO(config, deviceProfile),
+        config: updatedConfig,
       },
     );
+    console.log("Interpolated PlatformIO script:", interpolatedScript);
     // not stored
     const sendProfile = DeviceProfile.create({
       ...deviceProfile,
