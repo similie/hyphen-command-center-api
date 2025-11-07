@@ -18,9 +18,6 @@ import {
 import { Device, DeviceProfile } from "../models/device";
 import { UUID } from "src/utils/tools";
 import { DeviceConfig, SourceRepository } from "src/models";
-import fs from "fs";
-import os from "os";
-import path from "path";
 import { DeviceSensor, Sensor } from "src/models/sensor";
 import { DeviceContentItems } from "src/models/types";
 @EllipsiesExtends("repositories")
@@ -115,15 +112,6 @@ export class DeviceController extends EllipsiesController<Device> {
     return await Device.generateDeviceOTAConfig(body, req.user);
   }
 
-  // @Post("/ota")
-  // public async triggerOtaUpdate(
-  //   @Body() body: { deviceIds: string[] },
-  //   @Res() res: ExpressResponse,
-  // ): Promise<ExpressResponse> {
-  //   // return Device.triggerOtaUpdate(body.deviceIds, res.locals.user?.uid);
-  //   return res;
-  // }
-
   @Post("/sensor")
   public async addSensorToDevice(
     @Body() body: { deviceId: string; identity: string },
@@ -162,50 +150,7 @@ export class DeviceController extends EllipsiesController<Device> {
     @Param("buildId") buildId: string,
     @Res() res: ExpressResponse,
   ): Promise<ExpressResponse> {
-    // Implement logic to retrieve the artifact for the given buildId
-    const hostBuildRoot =
-      process.env.HOST_BUILDS_PATH || path.join(os.tmpdir(), "similie-builds");
-    const zipPath = path.join(
-      hostBuildRoot,
-      // os.tmpdir(),
-      // "similie-builds",
-      buildId,
-      `${deviceId}.zip`,
-    );
-    if (fs.existsSync(zipPath)) {
-      res.setHeader("Content-Type", "application/zip");
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename="${deviceId}.zip"`,
-      );
-
-      await new Promise<void>((resolve, reject) => {
-        const stream = fs.createReadStream(zipPath);
-        stream.pipe(res);
-
-        stream.on("close", () => {
-          console.log(`✅ Artifact stream completed for ${zipPath}`);
-          resolve();
-        });
-
-        stream.on("error", (err) => {
-          console.error("❌ Stream error:", err);
-          if (!res.headersSent) {
-            res.status(500).json({ error: "Error streaming artifact" });
-          } else {
-            res.end();
-          }
-
-          reject(err);
-        });
-      });
-
-      fs.unlinkSync(zipPath);
-    } else {
-      res.status(404).json({ error: "Artifact not found" });
-    }
-
-    return res;
+    return Device.getBuildArtifacts(deviceId, buildId, res);
   }
 
   @Post("/local-flash", { transformResponse: false, transformRequest: false })
@@ -231,7 +176,6 @@ export class DeviceController extends EllipsiesController<Device> {
         res.end();
       }
     }
-
     return res;
   }
 }

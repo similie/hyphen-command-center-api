@@ -27,9 +27,9 @@ export class DeviceSensor extends EllipsiesBaseModelUUID {
     const results = await this.find({ where: { device: device.id } });
     const sensorIds = results.map((ds) => ds.sensor);
     const sensors = await Sensor.find({ where: { id: In(sensorIds) } });
-    return sensors.map((sensor) => {
-      const deviceSensor = results.find((ds) => ds.sensor === sensor.id);
-      return { ...sensor, relation: deviceSensor } as Sensor & {
+    return results.map((ds) => {
+      const deviceSensor = sensors.find((sensor) => sensor.id === ds.sensor);
+      return { ...deviceSensor, relation: ds } as Sensor & {
         relation: DeviceSensor;
       };
     });

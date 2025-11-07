@@ -344,6 +344,57 @@ export class Device extends EllipsiesBaseModelUUID {
     return deviceConfig as DeviceConfig;
   }
 
+  public static async getBuildArtifacts(
+    deviceId: string,
+    buildId: string,
+    res: ExpressResponse,
+  ) {
+    // Implement logic to retrieve the artifact for the given buildId
+    const hostBuildRoot =
+      process.env.HOST_BUILDS_PATH || path.join(os.tmpdir(), "similie-builds");
+    const zipPath = path.join(
+      hostBuildRoot,
+      // os.tmpdir(),
+      // "similie-builds",
+      buildId,
+      `${deviceId}.zip`,
+    );
+    if (fs.existsSync(zipPath)) {
+      res.setHeader("Content-Type", "application/zip");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${deviceId}.zip"`,
+      );
+
+      await new Promise<void>((resolve, reject) => {
+        const stream = fs.createReadStream(zipPath);
+        stream.pipe(res);
+
+        stream.on("close", () => {
+          console.log(`✅ Artifact stream completed for ${zipPath}`);
+          resolve();
+        });
+
+        stream.on("error", (err) => {
+          console.error("❌ Stream error:", err);
+          if (!res.headersSent) {
+            res.status(500).json({ error: "Error streaming artifact" });
+          } else {
+            res.end();
+          }
+
+          reject(err);
+        });
+      });
+
+      fs.unlinkSync(zipPath);
+    } else {
+      res.status(404).json({ error: "Artifact not found" });
+    }
+
+    return res;
+  }
+
   public static async getDevicesForOtaUpdate(
     deviceId: string,
     buildId: string,
@@ -631,7 +682,7 @@ export class Device extends EllipsiesBaseModelUUID {
     }
 
     const updatedConfig = this.correctConfigForPIO(config, deviceProfile);
-    console.log("Validating corrected config for PIO", updatedConfig);
+    // console.log("Validating corrected config for PIO", updatedConfig);
     const interpolatedScript = SimilieQuery.interpolate(
       deviceProfile.script || "",
       {
@@ -639,7 +690,7 @@ export class Device extends EllipsiesBaseModelUUID {
         config: updatedConfig,
       },
     );
-    console.log("Interpolated PlatformIO script:", interpolatedScript);
+    // console.log("Interpolated PlatformIO script:", interpolatedScript);
     // not stored
     const sendProfile = DeviceProfile.create({
       ...deviceProfile,
