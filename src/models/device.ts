@@ -544,9 +544,9 @@ export class Device extends EllipsiesBaseModelUUID {
     config: Record<string, any> = {},
     deviceProfile: DeviceProfile,
   ): Record<string, any> {
-    //deviceProfile.defConfigSchema
     const defaultConfig = deviceProfile.defConfigSchema || {};
     const schema = deviceProfile.configSchema || {};
+
     const correctedConfig: Record<string, any> = Object.assign(
       {},
       defaultConfig,
@@ -555,18 +555,30 @@ export class Device extends EllipsiesBaseModelUUID {
 
     for (const key of Object.keys(correctedConfig)) {
       const expectedType = schema[key];
-      if (expectedType !== "string" && expectedType !== "text") {
+
+      // Only process text-like fields
+      if (expectedType !== "string" && expectedType !== "text") continue;
+
+      let value = correctedConfig[key];
+      if (!value) {
         continue;
       }
-      const value = correctedConfig[key];
+      // Normalize to string
       if (typeof value !== "string") {
-        correctedConfig[key] = String(value);
+        value = String(value);
+        correctedConfig[key] = value;
       }
-      if (value.includes("\\ ")) {
-        continue;
-      }
+
+      // If there are **no spaces**, do nothing
+      if (!value.includes(" ")) continue;
+
+      // If spaces are already escaped, do nothing
+      if (value.includes("\\ ")) continue;
+
+      // Escape spaces for PlatformIO
       correctedConfig[key] = value.replace(/ /g, "\\ ");
     }
+
     return correctedConfig;
   }
 
