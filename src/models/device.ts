@@ -86,10 +86,17 @@ export class DeviceProfile extends EllipsiesBaseModelUUID {
   })
   public partitions?: { address: number; type: string }[];
 
+  @Column("boolean", {
+    name: "cloud_flash",
+    default: false,
+  })
+  public cloudFlash: boolean;
+
   public seeds() {
     return [
       {
         name: "HyphenElemental4",
+        cloudFlash: true,
         configSchema: {
           apn: "string",
           sim_pin: "string",
@@ -337,24 +344,6 @@ export class Device extends EllipsiesBaseModelUUID {
     return deviceConfig as DeviceConfig;
   }
 
-  // private static sendOtaProgressUpdate(contentLength: number, device: Device) {
-  //   return (totalWritten: number) => {
-  //     if (contentLength === 0) {
-  //       return;
-  //     }
-  //     DeviceShadowManager.get.processOtaUpdate(
-  //       Buffer.from(
-  //         JSON.stringify({
-  //           status: "progress",
-  //           progress: (totalWritten * 100) / contentLength,
-  //         }),
-  //         "utf8",
-  //       ),
-  //       device,
-  //     );
-  //   };
-  // }
-
   public static async getDevicesForOtaUpdate(
     deviceId: string,
     buildId: string,
@@ -384,11 +373,6 @@ export class Device extends EllipsiesBaseModelUUID {
     }
 
     let fileFound = false;
-
-    // DeviceShadowManager.get.processOtaUpdate(
-    //   Buffer.from(JSON.stringify({ status: "progress", process: 0 })),
-    //   device,
-    // );
 
     for await (const entry of directory) {
       const fileName = entry.path;
@@ -455,15 +439,6 @@ export class Device extends EllipsiesBaseModelUUID {
           writable.on("error", rej);
         });
 
-        // Stream the binary directly to the response
-        // await new Promise<void>((resolve, reject) => {
-        //   entry.pipe(res);
-        //   entry.on("end", resolve);
-        //   entry.on("error", reject);
-        // });
-        // Use pipeline to respect back-pressure
-        // pipeline(entry, res);
-        // return pipeline(entry, res);
         console.log(`✅ Firmware stream complete for ${deviceId}`);
         break;
       } else {
@@ -565,6 +540,36 @@ export class Device extends EllipsiesBaseModelUUID {
     return { device, sensor: sensorToRemove };
   }
 
+  private static correctConfigForPIO(
+    config: Record<string, any> = {},
+    deviceProfile: DeviceProfile,
+  ): Record<string, any> {
+    //deviceProfile.defConfigSchema
+    const defaultConfig = deviceProfile.defConfigSchema || {};
+    const schema = deviceProfile.configSchema || {};
+    const correctedConfig: Record<string, any> = Object.assign(
+      {},
+      defaultConfig,
+      config,
+    );
+
+    for (const key of Object.keys(correctedConfig)) {
+      const expectedType = schema[key];
+      if (expectedType !== "string" && expectedType !== "text") {
+        continue;
+      }
+      const value = correctedConfig[key];
+      if (typeof value !== "string") {
+        correctedConfig[key] = String(value);
+      }
+      if (value.includes("\\ ")) {
+        continue;
+      }
+      correctedConfig[key] = value.replace(/ /g, "\\ ");
+    }
+    return correctedConfig;
+  }
+
   public static async buildSoftwareForDevice(
     req: ExpressRequest,
     res: ExpressResponse,
@@ -608,15 +613,19 @@ export class Device extends EllipsiesBaseModelUUID {
     if (!sourceRepo) {
       throw new NotAcceptableError("No source repository found");
     }
-
+    console.log(
+      "Validating corrected config for PIO",
+      this.correctConfigForPIO(config, deviceProfile),
+    );
     const interpolatedScript = SimilieQuery.interpolate(
       deviceProfile.script || "",
       {
         device,
-        config: Object.assign({}, deviceProfile.defConfigSchema, config || {}),
+        config: this.correctConfigForPIO(config, deviceProfile),
       },
     );
-    const sendProfile = await DeviceProfile.create({
+    // not stored
+    const sendProfile = DeviceProfile.create({
       ...deviceProfile,
       script: interpolatedScript as string,
     });
