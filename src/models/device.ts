@@ -552,7 +552,10 @@ export class Device extends EllipsiesBaseModelUUID {
       defaultConfig,
       config,
     );
-
+    console.log(
+      "Corrected config before PIO fix:",
+      Object.assign({}, defaultConfig, config),
+    );
     for (const key of Object.keys(correctedConfig)) {
       const expectedType = schema[key];
 
