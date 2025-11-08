@@ -66,13 +66,13 @@ This API is designed to integrate directly with:
 
 ```mermaid
 flowchart TD
-  CC[Hyphen Command Center (Web UI)] <---> API[Hyphen Command Center API]
-  API <---> Ellipsies[Ellipsies (Orchestration & Workflow Engine)]
-  API <--> MQTT[(MQTT Broker + Cert Auth)]
-  MQTT <--> OS[HyphenOS (Device Runtime)]
-  OS --> Sensors[(Sensors / Actuators)]
-  CC --> Forwarders[Forwarders / Decoders]
-  Forwarders --> External[(External Systems)]
+  CC["Hyphen Command Center (Web UI)"] <--> API["Hyphen Command Center API"]
+  API <--> Ellipsies["Ellipsies (Orchestration & Workflow Engine)"]
+  API <--> MQTT["MQTT Broker + Certificate Authority"]
+  MQTT <--> OS["HyphenOS (Device Runtime)"]
+  OS --> Sensors["Sensors / Actuators"]
+  CC --> Forwarders["Forwarders / Decoders"]
+  Forwarders --> External["External Systems / Data Pipelines"]
 ```
 
 ## ⚡ Features
