@@ -66,32 +66,13 @@ This API is designed to integrate directly with:
 
 ```mermaid
 flowchart TD
-
-  subgraph UI[Hyphen Command Center (SvelteKit UI)]
-  end
-
-  subgraph API[Hyphen Command Center API]
-    Auth[JWT / Session Auth]
-    Routing[REST & WebSocket Routing]
-    Orchestration[Device & User Orchestration]
-  end
-
-  subgraph Broker[Secure MQTT Broker]
-  end
-
-  subgraph Fleet[HyphenOS + HyphenConnect Devices]
-    HC1[HyphenConnect]
-    OS1[HyphenOS]
-  end
-
-  subgraph Integrations[External Services / Data Destinations]
-  end
-
-  UI --- API
-  API --- Broker
-  Broker <--> HC1
-  HC1 --> OS1
-  API --> Integrations
+  CC[Hyphen Command Center (Web UI)] <---> API[Hyphen Command Center API]
+  API <---> Ellipsies[Ellipsies (Orchestration & Workflow Engine)]
+  API <--> MQTT[(MQTT Broker + Cert Auth)]
+  MQTT <--> OS[HyphenOS (Device Runtime)]
+  OS --> Sensors[(Sensors / Actuators)]
+  CC --> Forwarders[Forwarders / Decoders]
+  Forwarders --> External[(External Systems)]
 ```
 
 ## ⚡ Features
