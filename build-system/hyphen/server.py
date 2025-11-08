@@ -136,19 +136,6 @@ async def build(request: Request):
         
     insert_ca_chain()
 
-    # Write certificates with verification
-    # for name, content in certs.items():
-    #     filepath = os.path.join("data", name)
-    #     with open(filepath, "w", encoding="utf-8", newline="\n") as f:
-    #         f.write(content)
-        
-    #     # VERIFY!
-    #     size = os.path.getsize(filepath)
-    #     logger.info(f"✅ {name}: {size} bytes")
-        
-    #     if size == 0:
-    #         raise Exception(f"File is empty: {name}")
-
     # 4️⃣ Run build
     proc = await asyncio.create_subprocess_shell(
         "pio run && pio run -t buildfs -v",

@@ -64,6 +64,36 @@ This API is designed to integrate directly with:
 
 ---
 
+```mermaid
+flowchart TD
+
+  subgraph UI[Hyphen Command Center (SvelteKit UI)]
+  end
+
+  subgraph API[Hyphen Command Center API]
+    Auth[JWT / Session Auth]
+    Routing[REST & WebSocket Routing]
+    Orchestration[Device & User Orchestration]
+  end
+
+  subgraph Broker[Secure MQTT Broker]
+  end
+
+  subgraph Fleet[HyphenOS + HyphenConnect Devices]
+    HC1[HyphenConnect]
+    OS1[HyphenOS]
+  end
+
+  subgraph Integrations[External Services / Data Destinations]
+  end
+
+  UI --- API
+  API --- Broker
+  Broker <--> HC1
+  HC1 --> OS1
+  API --> Integrations
+```
+
 ## ⚡ Features
 
 - **Device Management:** Register, monitor, and control Hyphen-compatible devices
@@ -143,6 +173,13 @@ API_SERVICE_ROUTES=1612 # 1612 is the service port for this application
 - Easily manage your fleet security with certificate-based access to your network
 - Requires Hyphen Connect and ESP32-based hardware (some features require HyphenOS).
 
+| Project                   | Description                                                                                                                       | Repository                                       |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| **HyphenOS**              | The device runtime environment for ultra-reliable IoT deployments. Includes OTA, telemetry queues, watchdogs, and sensor drivers. | https://github.com/similie/hyphen-os             |
+| **HyphenConnect**         | Network + MQTT abstraction layer for ESP32 / Cellular devices. Enables function calls, variable access, and secure OTA.           | https://github.com/similie/hyphen-connect        |
+| **Hyphen Command Center** | SvelteKit UI for managing your global device fleet, OTA updates, telemetry, and configuration.                                    | https://github.com/similie/hyphen-command-center |
+| **Ellipsies**             | Workflow + routing engine powering the API: device identity, build pipeline, users, orgs, storage, and message routing.           | https://github.com/similie/ellipsies             |
+
 ## 🧑‍💻 Contributing
 
 We welcome community collaboration!
@@ -164,8 +201,6 @@ requires a commercial license from Similie.
 Contact: licensing@similie.org￼
 
 See the full license in LICENSE.md￼
-
-⸻
 
 ## 🌍 About Similie
 

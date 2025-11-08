@@ -42,7 +42,7 @@ export default class SourceRepository extends EllipsiesBaseModelUUID {
     return [
       {
         name: "Hyphen Community",
-        url: "git@github.com:similie/hyphen-community.git",
+        url: "https://github.com/similie/hyphen-os.git",
         sshKey: "",
         branch: "main",
         containerName: "similie/platformio-builder:latest",
