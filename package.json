@@ -1,6 +1,6 @@
 {
   "name": "@similie/hyphen-command-center-api",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "API for Hyphen Command Center. Manages devices, builds, payload forwarding, and device authentication.",
   "license": "GPL-3.0-only",
   "author": "adam.smith@similie.org",
