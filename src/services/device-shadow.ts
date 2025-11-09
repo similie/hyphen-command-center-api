@@ -28,6 +28,7 @@ import {
 import fetch, { RequestInit } from "node-fetch";
 import { ForwarderService } from "./forwarder";
 import { CertificateManager } from "./certificate-manager";
+import { ServiceRunner } from "./runner";
 export class DeviceShadowManager {
   private static _instance: DeviceShadowManager | undefined;
   private readonly QUEUE_CONNECTION_MESSAGE = "process-device-stream";
@@ -90,6 +91,10 @@ export class DeviceShadowManager {
 
   private isHeartbeatTopic(topic: string) {
     return topic.includes(`/Post/Heartbeat`);
+  }
+
+  private isConfigTimeTopic(topic: string) {
+    return topic.includes(`/Config/Time`);
   }
 
   private isConfigTopic(topic: string) {
@@ -294,11 +299,6 @@ export class DeviceShadowManager {
     message: Buffer<ArrayBufferLike>,
     device: Device,
   ) {
-    console.log(
-      "Processing OTA update for device:",
-      message.toString(),
-      device.identity,
-    );
     this._ackQueue.add(this.OTA_TOPIC_PREFIX, { message, device });
   }
 
@@ -350,6 +350,24 @@ export class DeviceShadowManager {
     }
   }
 
+  private async sendTimeConfig(device: Device) {
+    const topic = `/Config/${device.identity}/Time`;
+    const currentDate = new Date();
+    const currentUTCTimestamp = currentDate.toUTCString();
+    const timePayload = {
+      time: currentUTCTimestamp,
+      unix: Math.floor(currentDate.getTime() / 1000),
+    };
+
+    const subscriptions = ServiceRunner.getSubscriptionsBase();
+    for (const sub of subscriptions) {
+      await DeviceShadowManager.sendMQTTMessage(
+        sub + topic,
+        JSON.stringify(timePayload),
+      );
+    }
+  }
+
   private async processActions(
     topic: string,
     message: Buffer<ArrayBufferLike>,
@@ -368,6 +386,8 @@ export class DeviceShadowManager {
     } else if (this.isOtaTopic(device.identity, topic)) {
       console.log(`Device ${device.identity} OTA update received.`);
       await this.processOtaUpdate(message, device);
+    } else if (this.isConfigTimeTopic(topic)) {
+      await this.sendTimeConfig(device);
     } else if (this.isConfigTopic(topic)) {
       // Handle config topic
       console.log(`Device ${device.identity} config received.`);
@@ -534,6 +554,7 @@ export class DeviceShadowManager {
     try {
       for (const target of targets) {
         // we do this at runtime to ensure we have the latest context
+        // console.log("Processing forwarder target:", data.ctx, target);
         const { deliverables } = ForwarderService.renderTargetDeliverables(
           target,
           data.ctx,

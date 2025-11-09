@@ -54,6 +54,7 @@ export class ForwarderService {
     const matches = forwarders.filter((f) =>
       mqttTopicMatch(ctx.topic, f.topicPattern),
     );
+
     // console.log("GOT THESE MATCHES", matches);
     if (!matches.length) return;
 
@@ -199,6 +200,7 @@ export class ForwarderService {
   }
 
   private static processMQTTTarget(target: MqttTarget, ctx: MsgCtx) {
+    // console.log("Processing MQTT Target:", target, ctx);
     const topic = ForwarderService.interpolate(target.topicTemplate, ctx);
     const body = ForwarderService.createBodyContext(
       target.payloadTemplate || [],
@@ -258,7 +260,6 @@ export class ForwarderService {
         ctx.payload = ctx.message; // also set payload for templates
       }
     }
-
     if (template.condition) {
       const ok = await SimilieQuery.evaluate(template.condition, ctx);
       if (!ok) return;
@@ -294,7 +295,6 @@ export class ForwarderService {
         ctx.payload = ctx.message; // also set payload for templates
       }
     }
-
     await cb(fwd.targets || [], fwd, ctx);
   }
 
