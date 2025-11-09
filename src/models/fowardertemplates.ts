@@ -79,42 +79,6 @@ export default class ForwarderTemplate extends EllipsiesBaseModelUUID {
         owner: "301e149b-a10d-41b8-a6f6-a47a7317ab95",
         id: "722292ed-434b-4251-8778-ba7261f4acf8",
       },
-      {
-        name: "Parable Site-Level Integration",
-        description: "This allows us to globally integration the device",
-        enabled: true,
-        condition: "",
-        decoderIds: [
-          "e563afc4-305f-46d8-86e9-9bc8efacf771",
-          "f1c82248-2e37-4901-9aca-91778ac06b4b",
-        ],
-        mapIds: [
-          "ff2b45c2-516d-45db-b158-d9727fcfd701",
-          "b66c4262-e94f-48b9-b07f-c17123d9844e",
-          "609f429b-2df2-4aab-bc37-561f0fb07c0f",
-        ],
-        transformerIds: ["32d7a3d1-3977-439a-9de2-f04909d6693d"],
-        targets: [
-          {
-            kind: "http",
-            method: "POST",
-            headers: [
-              {
-                key: "authentication",
-                value: "",
-                derived: true,
-                required: false,
-              },
-              { key: "secret", value: "", derived: true, required: false },
-            ],
-            urlTemplate: "http://localhost:1337/api/v1/devices/simplify",
-            bodyTemplate: [],
-          },
-        ],
-        retryPolicy: { backoffMs: 1000, maxAttempts: 3 },
-        owner: "301e149b-a10d-41b8-a6f6-a47a7317ab95",
-        id: "04a285d1-2003-4cd0-a2ff-633dfff2b91d",
-      },
     ];
   }
 }

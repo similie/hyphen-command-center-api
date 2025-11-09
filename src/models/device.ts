@@ -105,6 +105,7 @@ export class DeviceProfile extends EllipsiesBaseModelUUID {
           wifi_ssid: "string",
           topic_base: "string",
           mqtt_endpoint: "string",
+          connection_type: "number",
         },
         defConfigSchema: {
           apn: "internet",
@@ -112,7 +113,8 @@ export class DeviceProfile extends EllipsiesBaseModelUUID {
           wifi_pass: "ChangeByDesign",
           wifi_ssid: "Similie\\ Guests",
           topic_base: "Hy/",
-          mqtt_endpoint: "a2hreerobwhgvz-ats.iot.us-east-1.amazonaws.com",
+          mqtt_endpoint: "<your-endpoint>.iot.<region>.amazonaws.com",
+          connection_type: 0,
         },
         script:
           "[env:esp32dev]\n" +
@@ -128,8 +130,9 @@ export class DeviceProfile extends EllipsiesBaseModelUUID {
           "  src/certs/root-ca.pem\n" +
           "  src/certs/device-cert.pem\n" +
           "  src/certs/private-key.pem\n" +
+          "  src/certs/isrgrootx1.pem\n" +
           "lib_deps = \n" +
-          "    guernica0131/HyphenConnect@^1.0.3\n" +
+          "    guernica0131/HyphenConnect@^1.0.9\n" +
           "    envirodiy/SDI-12@2.1.4\n" +
           "    emanuelefeola/ArduinoHttpClient@^0.5.0\n" +
           "    ArduinoJson@^7.4.2\n" +
@@ -141,6 +144,7 @@ export class DeviceProfile extends EllipsiesBaseModelUUID {
           " -D CORE_DEBUG_LEVEL=ARDUHAL_LOG_LEVEL_VERBOSE\n" +
           ' -D CELLULAR_APN=\\"{config.apn}\\"\n' +
           ' -D GSM_SIM_PIN=\\"{config.sim_pin}\\"\n' +
+          " -D CONNECTION_TYPE={config.connection_type}\n" +
           ' -D MQTT_IOT_ENDPOINT=\\"{config.mqtt_endpoint}\\"\n' +
           " -D MQTT_IOT_PORT={config.mqtt_port} \n" +
           ' -D DEVICE_PUBLIC_ID=\\"{device.identity}\\" \n' +
@@ -168,8 +172,8 @@ export class DeviceProfile extends EllipsiesBaseModelUUID {
         partitions: [
           { type: "bootloader.bin", address: 4096 },
           { type: "firmware.bin", address: 65536 },
-          { type: "spiffs.bin", address: 11599872 },
           { type: "partitions.bin", address: 32768 },
+          { type: "spiffs.bin", address: 7929856 },
         ],
         id: "e45d8b56-20d6-4766-bd96-787fb499516d",
       },
