@@ -41,5 +41,5 @@ jobs:
                   platforms: linux/amd64,linux/arm64
                   push: true
                   tags: |
-                      similie/hyphen-command-center:latest
-                      similie/hyphen-command-center:${{ env.VERSION }}
+                      similie/hyphen-command-center-api:latest
+                      similie/hyphen-command-center-api:${{ env.VERSION }}
