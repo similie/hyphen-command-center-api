@@ -607,10 +607,6 @@ export class Device extends EllipsiesBaseModelUUID {
       defaultConfig,
       config,
     );
-    console.log(
-      "Corrected config before PIO fix:",
-      Object.assign({}, defaultConfig, config),
-    );
     for (const key of Object.keys(correctedConfig)) {
       const expectedType = schema[key];
 
@@ -618,7 +614,7 @@ export class Device extends EllipsiesBaseModelUUID {
       if (expectedType !== "string" && expectedType !== "text") continue;
 
       let value = correctedConfig[key];
-      console.log("Processing config key:", key, "with value:", value);
+
       if (!value) {
         continue;
       }
@@ -686,7 +682,6 @@ export class Device extends EllipsiesBaseModelUUID {
     }
 
     const updatedConfig = this.correctConfigForPIO(config, deviceProfile);
-    // console.log("Validating corrected config for PIO", updatedConfig);
     const interpolatedScript = SimilieQuery.interpolate(
       deviceProfile.script || "",
       {
