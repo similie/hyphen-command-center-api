@@ -132,7 +132,7 @@ export class DeviceProfile extends EllipsiesBaseModelUUID {
           "  src/certs/private-key.pem\n" +
           "  src/certs/isrgrootx1.pem\n" +
           "lib_deps = \n" +
-          "    guernica0131/HyphenConnect@^1.0.9\n" +
+          "    guernica0131/HyphenConnect@^1.0.12\n" +
           "    envirodiy/SDI-12@2.1.4\n" +
           "    emanuelefeola/ArduinoHttpClient@^0.5.0\n" +
           "    ArduinoJson@^7.4.2\n" +
