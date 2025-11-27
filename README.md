@@ -155,11 +155,11 @@ API_SERVICE_ROUTES=1612 # 1612 is the service port for this application
 - Requires Hyphen Connect and ESP32-based hardware (some features require HyphenOS).
 
 | Project                   | Description                                                                                                                       | Repository                                       |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------- |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
 | **HyphenOS**              | The device runtime environment for ultra-reliable IoT deployments. Includes OTA, telemetry queues, watchdogs, and sensor drivers. | https://github.com/similie/hyphen-os             |
 | **HyphenConnect**         | Network + MQTT abstraction layer for ESP32 / Cellular devices. Enables function calls, variable access, and secure OTA.           | https://github.com/similie/hyphen-connect        |
 | **Hyphen Command Center** | SvelteKit UI for managing your global device fleet, OTA updates, telemetry, and configuration.                                    | https://github.com/similie/hyphen-command-center |
-| **Hyphen Elemental**      | The hardware schematics Similie uses to for our Hyphen Elemental 4 line of Products.                                              | PCB Design                                       | https://github.com/similie/hyphen-elemental |
+| **Hyphen Elemental**      | The hardware schematics Similie uses to for our Hyphen Elemental 4 line of Products.                                              | https://github.com/similie/hyphen-elemental      |
 | **Ellipsies**             | Workflow + routing engine powering the API: device identity, build pipeline, users, orgs, storage, and message routing.           | https://github.com/similie/ellipsies             |
 
 ## 🧑‍💻 Contributing
