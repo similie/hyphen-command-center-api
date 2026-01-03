@@ -16,7 +16,7 @@
   "dependencies": {
     "@similie/ellipsies": "^1.0.16",
     "@similie/hyphen-command-server-types": "^1.0.7",
-    "@similie/hyphen-rtsp-tunnel": "^1.1.1",
+    "@similie/hyphen-rtsp-tunnel": "^1.1.2",
     "aws-sdk": "^2.1692.0",
     "bullmq": "^5.62.0",
     "crypto-js": "^4.2.0",
