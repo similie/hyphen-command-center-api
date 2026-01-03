@@ -5,7 +5,7 @@ import {
   QueryAgent,
 } from "@similie/ellipsies";
 import { DeviceShadowManager, ServiceRunner } from "src/services";
-import { UUID } from "src/utils/tools";
+import { UUID } from "@similie/hyphen-command-server-types";
 
 @Entity("device_config", { schema: "public" })
 export default class DeviceConfig extends EllipsiesBaseModelUUID {

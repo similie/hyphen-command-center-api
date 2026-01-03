@@ -6,7 +6,7 @@ import {
   ExpressResponse,
   ExpressNext,
 } from "@similie/ellipsies";
-import { verifyTokenValidity } from "src/services";
+import { verifyTokenValidity } from "@similie/hyphen-command-server-types";
 @Service()
 @Middleware({ type: "before" })
 export class AuthMiddleware {

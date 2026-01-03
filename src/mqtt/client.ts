@@ -2,13 +2,24 @@ import mqtt, { MqttClient, type IClientOptions } from "mqtt";
 import IdentityCertificates from "../models/certificate";
 import SystemIdentity from "../models/identity";
 import { ServiceRunner } from "src/services";
-import { LeaderElector } from "src/services/leader-lock";
-import { generateUniqueId } from "src/utils/tools";
+import {
+  LeaderElector,
+  generateUniqueId,
+} from "@similie/hyphen-command-server-types";
 
 export class MqttClientManager {
   private static client: MqttClient | null = null;
   private static serviceRunner: ServiceRunner;
   private static elector = LeaderElector.get();
+  private static onElected = () => {
+    console.log("👑 Became leader – subscribing to MQTT.");
+    this.serviceRunner.setSubscriptions();
+  };
+
+  private static onRevoked = () => {
+    console.log("🥾 Lost leadership – unsubscribing from MQTT.");
+    this.serviceRunner.teardownSubscriptions();
+  };
   static async connect(identity: SystemIdentity) {
     const cert = await IdentityCertificates.findOne({
       where: { identity: identity.identity },
@@ -56,8 +67,8 @@ export class MqttClientManager {
       try {
         // Always (re)bind listeners to the *current* elector emitter
         // since it may have been recreated by init()
-        this.elector.removeAllListeners("elected");
-        this.elector.removeAllListeners("revoked");
+        this.elector.off("elected", this.onElected);
+        this.elector.off("revoked", this.onRevoked);
         await this.elector.init(process.env.REDIS_CONFIG_URL!);
       } catch (err) {
         console.error("⚠️ Error initializing leader elector:", err);
@@ -67,15 +78,8 @@ export class MqttClientManager {
        * 👑 Leader election won
        * In a multi-instance setup, only the leader should subscribe to MQTT topics
        */
-      this.elector.on("elected", () => {
-        console.log("👑 Became leader – subscribing to MQTT.");
-        this.serviceRunner.setSubscriptions(); // start leader-only work
-      });
-
-      this.elector.on("revoked", () => {
-        console.log("🥾 Lost leadership – unsubscribing from MQTT.");
-        this.serviceRunner.teardownSubscriptions(); // stop leader-only work
-      });
+      this.elector.on("elected", this.onElected);
+      this.elector.on("revoked", this.onRevoked);
     });
 
     this.client.on("error", (err) => {

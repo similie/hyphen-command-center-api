@@ -5,7 +5,7 @@ import {
   DeviceConfigEnum,
   SensorType,
 } from "src/models/types";
-import { UUID } from "src/utils/tools";
+import { UUID } from "@similie/hyphen-command-server-types";
 
 export class SensorTypeRules {
   constructor(

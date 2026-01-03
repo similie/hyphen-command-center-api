@@ -1,5 +1,9 @@
 import { type MqttClient } from "mqtt";
-import { JobValue, QueueManager, jQueue } from "./queue";
+import {
+  JobValue,
+  QueueManager,
+  jQueue,
+} from "@similie/hyphen-command-server-types";
 import { DeviceShadowManager } from "./device-shadow";
 import { SourceRepository } from "src/models";
 import { BuildComposeManager } from "./docker-manager";

@@ -4,3 +4,4 @@ image_builds
 *.code-workspace
 .env
 dist
+localhost+2*

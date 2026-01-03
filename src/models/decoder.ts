@@ -1,7 +1,6 @@
 import { Entity, Column, EllipsiesBaseModelUUID } from "@similie/ellipsies";
-import { UUID } from "src/utils/tools";
 import * as msgpackr from "msgpackr";
-import { RedisCache } from "src/services";
+import { RedisCache, UUID } from "@similie/hyphen-command-server-types";
 @Entity("decoder", { schema: "public" })
 export default class Decoder extends EllipsiesBaseModelUUID {
   @Column("varchar", {

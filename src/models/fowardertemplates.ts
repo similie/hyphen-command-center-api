@@ -1,8 +1,6 @@
 import { Entity, Column, EllipsiesBaseModelUUID } from "@similie/ellipsies";
 import { ForwarderTargetKind, ForwarderTargetTemplates } from "./types";
-import { UUID } from "src/utils/tools";
-import { url } from "inspector";
-
+import { UUID } from "@similie/hyphen-command-server-types";
 @Entity("forwarder_template", { schema: "public" })
 export default class ForwarderTemplate extends EllipsiesBaseModelUUID {
   @Column("varchar", { name: "name" }) name!: string;

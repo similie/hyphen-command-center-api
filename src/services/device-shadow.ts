@@ -1,5 +1,4 @@
 import {
-  Decoder,
   Device,
   DeviceConfig,
   DeviceRegistration,
@@ -8,13 +7,16 @@ import {
   Forwarder,
   Heartbeat,
 } from "src/models";
-import { JobValue, jQueue, QueueManager } from "./queue";
-import { RedisCache } from "./redis";
+// import { JobValue, jQueue, QueueManager } from "./queue";
+import { RedisCache } from "@similie/hyphen-command-server-types";
 import {
   generateUniqueUUID,
   MQTTFunctionalResponse,
   UUID,
-} from "src/utils/tools";
+  JobValue,
+  jQueue,
+  QueueManager,
+} from "@similie/hyphen-command-server-types";
 import { MqttClientManager } from "src/mqtt";
 import { QueryAgent } from "@similie/ellipsies";
 import {
@@ -251,7 +253,11 @@ export class DeviceShadowManager {
       config.value = String(payload.value);
       config.state = DeviceConfigEnum.RESOLVED; // Mark as resolved
       await config.save();
-      await this._configQueue.add(this.QUEUE_CONFIG_PROCESS, config);
+      setTimeout(async () => {
+        // wait 2 seconds before adding to config queue
+        // we found that the command center UI may not be ready to accept new config immediately
+        await this._configQueue.add(this.QUEUE_CONFIG_PROCESS, config);
+      }, 2000);
     } catch (e) {
       console.error("Error processing config request response:", e);
     }
@@ -287,7 +293,7 @@ export class DeviceShadowManager {
     // Implement the logic to check to respond to config requests
   }
 
-  private async checkTopicForDeviceFormMaintenance(
+  private async checkTopicForDeviceForMaintenance(
     topic: string,
     message: Buffer<ArrayBufferLike>,
     device: Device,
@@ -394,7 +400,7 @@ export class DeviceShadowManager {
       await this.checkTopicForDeviceConfig(topic, message, device);
     } else if (this.isMaintenanceTopic(topic)) {
       console.log(`Device ${device.identity} maintenance received.`);
-      this.checkTopicForDeviceFormMaintenance(topic, message, device);
+      this.checkTopicForDeviceForMaintenance(topic, message, device);
     } else if (this.isDeliveryTopic(topic)) {
       console.log(`Device ${device.identity} delivery received.`);
       await this.checkTopicForwarderForDevice(topic, message, device);

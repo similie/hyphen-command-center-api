@@ -5,7 +5,7 @@ import {
   BeforeInsert,
 } from "@similie/ellipsies";
 
-import { generateUniqueId } from "src/utils/tools";
+import { generateUniqueId } from "@similie/hyphen-command-server-types";
 
 const defaultEndpoint = () => {
   return process.env.MQTT_IOT_ENDPOINT || "";

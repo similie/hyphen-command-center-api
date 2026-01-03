@@ -4,7 +4,7 @@ import {
   ParameterToForwardValue,
   ParameterValueOwnerBy,
 } from "./types";
-import { UUID } from "src/utils/tools";
+import { UUID } from "@similie/hyphen-command-server-types";
 
 @Entity("forwarder", { schema: "public" })
 export default class Forwarder extends EllipsiesBaseModelUUID {

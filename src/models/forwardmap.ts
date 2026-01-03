@@ -1,6 +1,6 @@
 import { Entity, Column, EllipsiesBaseModelUUID } from "@similie/ellipsies";
-import { EnvCrypt } from "src/services";
-import { UUID } from "src/utils/tools";
+
+import { UUID, EnvCrypt } from "@similie/hyphen-command-server-types";
 import { ParameterValueOwnerBy } from "./types/parameter";
 
 @Entity("parameter_value", { schema: "public" })

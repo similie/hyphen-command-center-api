@@ -14,9 +14,8 @@ import {
   ParameterValueOwnerBy,
 } from "src/models/types";
 import { In } from "@similie/ellipsies";
-import { SimilieQuery } from "./objectq";
 import fetch, { RequestInit } from "node-fetch";
-import { UUID } from "src/utils/tools";
+import { UUID, SimilieQuery } from "@similie/hyphen-command-server-types";
 
 export function mqttTopicMatch(topic: string, pattern: string) {
   // supports + and # per MQTT rules

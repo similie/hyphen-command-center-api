@@ -18,11 +18,15 @@ import {
   // DeviceShadowManager,
   generateNonceAndTimestamp,
   PlatformIOBuilder,
+} from "src/services";
+import {
+  RedisCache,
+  generateUniqueId,
+  UUID,
   signToken,
   SimilieQuery,
-} from "src/services";
-import { RedisCache } from "src/services/redis";
-import { generateUniqueId, UUID } from "src/utils/tools";
+} from "@similie/hyphen-command-server-types";
+
 import IdentityCertificates from "./certificate";
 import SourceRepository from "./repository";
 import { DeviceSensor, Sensor } from "./sensor";
@@ -255,6 +259,13 @@ export class Device extends EllipsiesBaseModelUUID {
     nullable: true,
   })
   public lastTouched?: Date;
+
+  @Column("float", {
+    name: "tz_offset_hours",
+    nullable: true,
+    default: null,
+  })
+  public tzOffsetHours: number | null;
 
   @BeforeInsert()
   setDefaults() {
@@ -514,6 +525,38 @@ export class Device extends EllipsiesBaseModelUUID {
     }
 
     return res;
+  }
+
+  public static async updateTimezoneOnDevice(
+    tz: number,
+    deviceId: string,
+    user?: UUID,
+  ) {
+    const agent = new QueryAgent<Device>(Device, {
+      where: { id: deviceId as UUID },
+    });
+    const device = await agent.findOneById(deviceId);
+    if (!device) {
+      throw new NotAcceptableError("Device not found");
+    }
+    try {
+      await Device.update({ id: device.id }, { tzOffsetHours: tz });
+
+      const deviceConfig = await DeviceConfig.createConfig({
+        identity: device.identity,
+        user: user,
+        noNullify: true,
+        state: DeviceConfigEnum.WAITING,
+        actionName: "setTimezone",
+        actionType: DeviceConfigActionType.FUNCTION,
+        data: `${tz}`,
+      });
+      return deviceConfig;
+    } catch (error: any) {
+      throw new NotAcceptableError(
+        "Could not update timezone: " + error.message,
+      );
+    }
   }
 
   public static async addSensorToDevice(

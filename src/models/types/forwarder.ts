@@ -1,4 +1,4 @@
-import { UUID } from "src/utils/tools";
+import { UUID } from "@similie/hyphen-command-server-types";
 import ForwarderTemplate from "../fowardertemplates";
 
 export enum ForwarderTargetKind {

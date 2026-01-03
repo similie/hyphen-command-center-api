@@ -16,10 +16,10 @@ import {
   ExpressResponse,
 } from "@similie/ellipsies";
 import { Device, DeviceProfile } from "../models/device";
-import { UUID } from "src/utils/tools";
+import { UUID } from "@similie/hyphen-command-server-types";
 import { DeviceConfig, SourceRepository } from "src/models";
 import { DeviceSensor, Sensor } from "src/models/sensor";
-import { DeviceContentItems } from "src/models/types";
+import { DeviceContentItems } from "../models/types";
 @EllipsiesExtends("repositories")
 export class RepositoryController extends EllipsiesController<SourceRepository> {
   public constructor() {
@@ -110,6 +110,18 @@ export class DeviceController extends EllipsiesController<Device> {
   ): Promise<DeviceConfig> {
     console.log("Creating OTA Update for device:", body, req.user);
     return await Device.generateDeviceOTAConfig(body, req.user);
+  }
+
+  @Post("/timezone")
+  public async updateTimezoneOnDevice(
+    @Body() body: { tz: number; deviceId: string },
+    @Res() res: ExpressResponse,
+  ): Promise<DeviceConfig | DeviceConfig[]> {
+    return Device.updateTimezoneOnDevice(
+      body.tz,
+      body.deviceId,
+      res.locals.user?.uid,
+    );
   }
 
   @Post("/sensor")

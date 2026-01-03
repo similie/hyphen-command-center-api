@@ -6,7 +6,7 @@ import {
   QueryAgent,
   DataSourceRegistry,
 } from "@similie/ellipsies";
-import { RedisCache } from "src/services";
+import { RedisCache } from "@similie/hyphen-command-server-types";
 import { Device } from "./device";
 
 @Entity("device_streams", { schema: "public" })

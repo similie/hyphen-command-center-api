@@ -8,7 +8,10 @@ import {
   Body,
 } from "@similie/ellipsies";
 import { Decoder } from "src/models";
-import { generateUniqueId, generateUniqueUUID } from "src/utils/tools";
+import {
+  generateUniqueId,
+  generateUniqueUUID,
+} from "@similie/hyphen-command-server-types";
 
 @EllipsiesExtends("decoders")
 export default class DecoderController extends EllipsiesController<Decoder> {
