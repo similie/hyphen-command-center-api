@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/similie/hyphen-command-center-api/compare/v1.1.0...v1.2.0) (2026-01-03)
+
+
+### Features
+
+* updated to support plugin system ([70c9d7a](https://github.com/similie/hyphen-command-center-api/commit/70c9d7a40d9d96ea260ae64a1244e4d444958d2f))
+
 ## 1.1.0 (2025-11-09)
 
 
