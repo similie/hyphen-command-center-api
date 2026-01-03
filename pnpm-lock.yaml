@@ -15,8 +15,8 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7(@types/node@24.9.2)(class-transformer@0.5.1)(class-validator@0.14.2)(pg-query-stream@4.10.3(pg@8.16.3))(ts-node@10.9.2(@types/node@24.9.2)(typescript@5.9.3))(typescript@5.9.3)
       '@similie/hyphen-rtsp-tunnel':
-        specifier: ^1.1.1
-        version: 1.1.1(@types/node@24.9.2)(class-transformer@0.5.1)(class-validator@0.14.2)(ioredis@5.8.2)(pg-query-stream@4.10.3(pg@8.16.3))(pg@8.16.3)(redis@5.9.0)(ts-node@10.9.2(@types/node@24.9.2)(typescript@5.9.3))(typescript@5.9.3)
+        specifier: ^1.1.2
+        version: 1.1.2(@types/node@24.9.2)(class-transformer@0.5.1)(class-validator@0.14.2)(ioredis@5.8.2)(pg-query-stream@4.10.3(pg@8.16.3))(pg@8.16.3)(redis@5.9.0)(ts-node@10.9.2(@types/node@24.9.2)(typescript@5.9.3))(typescript@5.9.3)
       aws-sdk:
         specifier: ^2.1692.0
         version: 2.1692.0
@@ -783,8 +783,8 @@ packages:
   '@similie/hyphen-command-server-types@1.0.7':
     resolution: {integrity: sha512-EvKUfcXrp2nX+r7uWc06iyh5DCHcTcPwo9da7DWtQA9c1K9MZ+OCIPDWZyRQ0pkyNPCST4tpaevGpolQoFchkA==}
 
-  '@similie/hyphen-rtsp-tunnel@1.1.1':
-    resolution: {integrity: sha512-vpBObFVsmUqGry5mJQ05RV8IMwZzNTfp0eKJ8+PLHMtaqO7rPnmG7GUmGk8yLZkw4df+AWRIEbpMhj4tBmzF5Q==}
+  '@similie/hyphen-rtsp-tunnel@1.1.2':
+    resolution: {integrity: sha512-mDnSMNmJbe+uDQwPGH9j26WWqzYSbafxHRLIzz3MH1UT3YVqkEz8Po89wOohKdFdwPq1wpku9yDEID2kGBob7w==}
 
   '@similie/model-connect-entities@1.1.4':
     resolution: {integrity: sha512-c4ocssDuJXmfvygMrA/+DqZcofpQMhCtNQ5INCEs8NVzUE8XRWumXThZtWcOjkiIk2Wa6paSAGRTeayJOe5lUA==}
@@ -4724,7 +4724,7 @@ snapshots:
       - typeorm-aurora-data-api-driver
       - typescript
 
-  '@similie/hyphen-rtsp-tunnel@1.1.1(@types/node@24.9.2)(class-transformer@0.5.1)(class-validator@0.14.2)(ioredis@5.8.2)(pg-query-stream@4.10.3(pg@8.16.3))(pg@8.16.3)(redis@5.9.0)(ts-node@10.9.2(@types/node@24.9.2)(typescript@5.9.3))(typescript@5.9.3)':
+  '@similie/hyphen-rtsp-tunnel@1.1.2(@types/node@24.9.2)(class-transformer@0.5.1)(class-validator@0.14.2)(ioredis@5.8.2)(pg-query-stream@4.10.3(pg@8.16.3))(pg@8.16.3)(redis@5.9.0)(ts-node@10.9.2(@types/node@24.9.2)(typescript@5.9.3))(typescript@5.9.3)':
     dependencies:
       '@aws-sdk/client-s3': 3.958.0
       '@aws-sdk/client-sqs': 3.958.0
